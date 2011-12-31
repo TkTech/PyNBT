@@ -1,168 +1,256 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 """
-Copyright (C) 2011 Tyler Kennedy <tk@tkte.ch>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+A tiny library for reading & writing NBT files, used for the game
+'Minecraft' by Markus Petersson.
 """
-import struct
 import gzip
+import struct
 
 
-class Tag(object):
+class BaseTag(object):
     """
-    Superclass for all tags.
+    Implements methods common to all NBT tags.
     """
     def __init__(self, name, value):
         self._name = name
         self._value = value
 
     @property
-    def name(self):
-        return self._name
-
-    @property
     def value(self):
         return self._value
 
-    def __repr__(self):
-        return '%s(%r, %r)' % (
+    @property
+    def name(self):
+        return self._name
+
+    @staticmethod
+    def read_utf8(rd):
+        """
+        Reads in a length-prefixed UTF8 string.
+        """
+        length, = rd('>h')
+        return rd('>%ds' % length)[0]
+
+    @staticmethod
+    def write_utf8(wt, value):
+        """
+        Writes a length-prefixed UTF8 string.
+        """
+        wt('>h%ss' % len(value), len(value), value)
+
+    @classmethod
+    def read(cl, rd, has_name=True):
+        """
+        Read the tag in using the reader `rd`.
+        If `has_name` is `False`, skip reading the tag name.
+        """
+        if not hasattr(cl, 'STRUCT_FMT'):
+            raise NotImplementedError()
+
+        name = BaseTag.read_utf8(rd) if has_name else None
+        value, = rd(cl.STRUCT_FMT)
+
+        return cl(name, value)
+
+    def write(self, wt):
+        if not hasattr(self, 'STRUCT_FMT'):
+            raise NotImplementedError()
+        if self.name is not None:
+            wt('>b', _tags.index(self.__class__))
+            BaseTag.write_utf8(wt, self.name)
+
+        wt(self.STRUCT_FMT, self.value)
+
+    def pretty(self, indent=0, indent_str='  '):
+        """
+        Pretty-print a tag in the same general style as Markus's example
+        output.
+        """
+        return '%s%s(%r): %r' % (
+            indent_str * indent,
             self.__class__.__name__,
-            self._name,
-            self._value
+            self.name,
+            self.value
         )
 
-    def pretty(self, indent=0):
-        return '%s%s(%r): %r' % (
-            ('  ' * indent),
+    def __repr__(self):
+        return '%s(%r, %r)' % (
             self.__class__.__name__,
             self.name,
             self.value
         )
 
 
-class TAG_Byte(Tag):
-    pass
+class TAG_Byte(BaseTag):
+    STRUCT_FMT = '>b'
 
 
-class TAG_Short(Tag):
-    pass
+class TAG_Short(BaseTag):
+    STRUCT_FMT = '>h'
 
 
-class TAG_Int(Tag):
-    pass
+class TAG_Int(BaseTag):
+    STRUCT_FMT = '>i'
 
 
-class TAG_Long(Tag):
-    pass
+class TAG_Long(BaseTag):
+    STRUCT_FMT = '>q'
 
 
-class TAG_FLoat(Tag):
-    def __init__(self, name, value):
-        # Much easier then doing this ourself; not a simple type!
-        try:
-            struct.pack('>f', value)
-        except OverflowError, e:
-            raise ValueError(e)
-        super(TAG_FLoat, self).__init__(name, value)
+class TAG_Float(BaseTag):
+    STRUCT_FMT = '>f'
 
 
-class TAG_Double(Tag):
-    def __init__(self, name, value):
-        # Much easier then doing this ourself; not a simple type!
-        try:
-            struct.pack('>d', value)
-        except OverflowError, e:
-            raise ValueError(e)
-        super(TAG_Double, self).__init__(name, value)
+class TAG_Double(BaseTag):
+    STRUCT_FMT = '>d'
 
 
-class TAG_Byte_Array(Tag):
-    def __repr__(self):
-        return '<TAG_Byte_Array(%r, %d bytes)>' % (self.name, len(self.value))
+class TAG_Byte_Array(BaseTag):
+    @classmethod
+    def read(cl, rd, has_name=True):
+        name = BaseTag.read_utf8(rd) if has_name else None
+        length, = rd('>i')
+        return cl(name, rd('>%ss' % length)[0])
 
-    def pretty(self, indent=0):
-        return '%sTAG_Byte_Array(%r): [%r bytes]' % (
-            ('  ' * indent),
+    def write(self, wt):
+        if self.name is not None:
+            wt('>b', 7)
+            BaseTag.write_utf8(wt, self.name)
+
+        wt('>i%ss' % len(self.value), len(self.value), self.value)
+
+    def pretty(self, indent=0, indent_str='  '):
+        return '%sTAG_Byte_Array(%r): [%d bytes]' % (
+            indent_str * indent,
             self.name,
             len(self.value)
         )
 
 
-class TAG_String(Tag):
-    pass
+class TAG_String(BaseTag):
+    @classmethod
+    def read(cl, rd, has_name=True):
+        name = BaseTag.read_utf8(rd) if has_name else None
+        value = BaseTag.read_utf8(rd)
+        return cl(name, value)
+
+    def write(self, wt):
+        if self.name is not None:
+            wt('>b', 8)
+            BaseTag.write_utf8(wt, self.name)
+        wt('>h%ss' % len(self.value), len(self.value), self.value)
 
 
-class TAG_List(Tag):
-    def __init__(self, name, tagtype, values):
-        if len(values) > 2147483647:
-            raise ValueError('Length of list too large!(>32767)')
+class TAG_List(BaseTag):
+    """
+    Keep in mind that a TAG_List is only capable of storing
+    tags of the same type.
+    """
+    def __init__(self, name, tag_type, value):
+        self._type = tag_type
+        self._name = name
+        self._value = value
 
-        self._type = tagtype
-        super(TAG_List, self).__init__(name, values)
-
-    def __repr__(self):
-        return '<TAG_List(%r, %r, %d items)>' % (
-            self.name,
-            self._type.__class__.__name__,
-            len(self.value)
+    @classmethod
+    def read(cl, rd, has_name=True):
+        name = BaseTag.read_utf8(rd) if has_name else None
+        tag_type, length = rd('>bi')
+        real_type = _tags[tag_type]
+        return TAG_List(
+            name,
+            tag_type,
+            [real_type.read(rd, has_name=False) for x in xrange(0, length)]
         )
 
-    def pretty(self, indent=0):
+    def write(self, wt):
+        if self.name is not None:
+            wt('>b', 9)
+            BaseTag.write_utf8(wt, self.name)
+
+        wt('>bi', self._type, len(self.value))
+        for item in self.value:
+            item.write(wt)
+
+    def pretty(self, indent=0, indent_str='  '):
         t = []
-        t.append('%sTAG_List(%r): %d entries' % (
-            ('  ' * indent),
+        t.append('%sTAG_List(%r): %d entires' % (
+            indent_str * indent,
             self.name,
             len(self.value)
         ))
-        t.append('%s{' % ('  ' * indent))
+        t.append('%s{' % (indent_str * indent))
         for v in self.value:
             t.append(v.pretty(indent + 1))
-        t.append('%s}' % ('  ' * indent))
+        t.append('%s}' % (indent_str * indent))
         return '\n'.join(t)
 
 
-class TAG_Compund(Tag):
-    def pretty(self, indent=0):
+class TAG_Compound(BaseTag):
+    @classmethod
+    def read(cl, rd, has_name=True):
+        name = BaseTag.read_utf8(rd) if has_name else None
+        final = {}
+        while True:
+            tag, = rd('>b')
+            # EndTag
+            if tag == 0:
+                break
+
+            tmp = _tags[tag].read(rd)
+            final[tmp.name] = tmp
+
+        return cl(name, final)
+
+    def write(self, wt):
+        if self.name is not None:
+            wt('>b', 10)
+            BaseTag.write_utf8(wt, self.name)
+
+        for v in self.value.itervalues():
+            v.write(wt)
+
+        # EndTag
+        wt('>b', 0)
+
+    def pretty(self, indent=0, indent_str='  '):
         t = []
         t.append('%sTAG_Compound(%r): %d entries' % (
-            ('  ' * indent),
+            indent_str * indent,
             self.name,
             len(self.value)
         ))
-        t.append('%s{' % ('  ' * indent))
+        t.append('%s{' % (indent_str * indent))
         for v in self.value.itervalues():
             t.append(v.pretty(indent + 1))
-        t.append('%s}' % ('  ' * indent))
+        t.append('%s}' % (indent_str * indent))
 
         return '\n'.join(t)
 
+_tags = (
+    None,
+    TAG_Byte,
+    TAG_Short,
+    TAG_Int,
+    TAG_Long,
+    TAG_Float,
+    TAG_Double,
+    TAG_Byte_Array,
+    TAG_String,
+    TAG_List,
+    TAG_Compound
+)
 
-class NBTFile(TAG_Compund):
+
+class NBTFile(TAG_Compound):
     def __init__(self, io=None, root_name=None, compressed=True):
         if io is None:
             # We have no pre-existing NBT file.
             if root_name is None:
                 raise ValueError(
-                    'root_name must not be None if no file is provided!'
+                    'root_name must not be none if no file is provided!'
                 )
-            super(TAG_Compund, self).__init__(root_name, {})
+            super(TAG_Compound, self).__init__(root_name, {})
             return
 
         fin = open(io, 'rb') if isinstance(io, basestring) else io
@@ -173,7 +261,7 @@ class NBTFile(TAG_Compund):
 
         # Discard the leading tag prefx, we know it's a compound.
         read('>b')
-        tmp = self._read_compound(read)
+        tmp = TAG_Compound.read(read)
 
         self._name = tmp.name
         self._value = tmp.value
@@ -184,77 +272,17 @@ class NBTFile(TAG_Compund):
         if isinstance(io, basestring):
             fin.close()
 
-    def _read_utf(self, rd):
-        length = rd('>h')[0]
-        return rd('>%ss' % length)[0]
+    def save(self, io, compressed=True):
+        fout = open(io, 'wb') if isinstance(io, basestring) else io
+        src = gzip.GzipFile(fileobj=fout, mode='wb') if compressed else fout
 
-    def _read_byte(self, rd, no_name=False):
-        name = None if no_name else self._read_utf(rd)
-        return TAG_Byte(name, rd('>b')[0])
+        def write(fmt, *args):
+            src.write(struct.pack(fmt, *args))
 
-    def _read_short(self, rd, no_name=False):
-        name = None if no_name else self._read_utf(rd)
-        return TAG_Short(name, rd('>h')[0])
+        self.write(write)
 
-    def _read_int(self, rd, no_name=False):
-        name = None if no_name else self._read_utf(rd)
-        return TAG_Int(name, rd('>i')[0])
+        if compressed:
+            src.close()
 
-    def _read_long(self, rd, no_name=False):
-        name = None if no_name else self._read_utf(rd)
-        return TAG_Long(name, rd('>q')[0])
-
-    def _read_float(self, rd, no_name=False):
-        name = None if no_name else self._read_utf(rd)
-        return TAG_FLoat(name, rd('>f')[0])
-
-    def _read_double(self, rd, no_name=False):
-        name = None if no_name else self._read_utf(rd)
-        return TAG_Double(name, rd('>d')[0])
-
-    def _read_bytearray(self, rd, no_name=False):
-        name = None if no_name else self._read_utf(rd)
-        length = rd('>i')[0]
-        return TAG_Byte_Array(name, rd('>%ss' % length)[0])
-
-    def _read_string(self, rd, no_name=False):
-        name = None if no_name else self._read_utf(rd)
-        return TAG_String(name, self._read_utf(rd))
-
-    def _read_list(self, rd, no_name=False):
-        name = None if no_name else self._read_utf(rd)
-        type_, length = rd('>bi')
-        reader, real_type = self._readers(type_)
-        return TAG_List(name, real_type,
-            [reader(rd, no_name=True) for x in xrange(0, length)]
-        )
-
-    def _readers(self, i):
-        return [
-            (),
-            (self._read_byte, TAG_Byte),
-            (self._read_short, TAG_Short),
-            (self._read_int, TAG_Int),
-            (self._read_long, TAG_Long),
-            (self._read_float, TAG_FLoat),
-            (self._read_double, TAG_Double),
-            (self._read_bytearray, TAG_Byte_Array),
-            (self._read_string, TAG_String),
-            (self._read_list, TAG_List),
-            (self._read_compound, TAG_Compund)
-        ][i]
-
-    def _read_compound(self, rd, no_name=False):
-        name = None if no_name else self._read_utf(rd)
-        final = {}
-
-        while True:
-            tag = rd('>b')[0]
-            if tag == 0:
-                # EndTag
-                break
-
-            tmp = self._readers(tag)[0](rd)
-            final[tmp.name] = tmp
-
-        return TAG_Compund(name, final)
+        if isinstance(io, basestring):
+            fout.close()
