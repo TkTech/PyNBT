@@ -3,28 +3,21 @@
 import sys
 import getopt
 
-from opennbt import NBTFile
+from opennbt import RegionFile
 
 
 def usage(path):
-    print('Dumps a NBT structure in a human-readable format.')
-    print('Usage: %s [options] file1 file2 ...' % path)
-    print('-h/--help')
-    print('\tPrints this message and quits.')
-    print('-o/--output [file]')
-    print('\tWrite output to a file.')
-    print('-u/--uncompressed')
-    print('\tDo not assume the input is compressed.')
+    pass
+
 
 if __name__ == '__main__':
     try:
         opts, args = getopt.gnu_getopt(
             sys.argv[1:],
-            'ho:u',
+            'ho:',
             [
                 'help',
-                'output=',
-                'uncompressed'
+                'output='
             ]
         )
     except getopt.GetoptError, e:
@@ -32,7 +25,6 @@ if __name__ == '__main__':
         sys.exit(2)
 
     output = sys.stdout
-    compressed = True
 
     for o, a in opts:
         if o in ('-h', '--help'):
@@ -40,8 +32,6 @@ if __name__ == '__main__':
             sys.exit(0)
         elif o in ('-o', '--output'):
             output = a
-        elif o in ('-u', '--uncompressed'):
-            compressed = False
         else:
             print('Unknown option %r!' % o)
             usage(sys.argv[0])
@@ -54,9 +44,10 @@ if __name__ == '__main__':
     out = open(output, 'wb') if isinstance(output, basestring) else output
 
     for arg in args:
-        n = NBTFile(arg, compressed=compressed)
+        n = RegionFile(arg)
         out.write(n.pretty())
         out.write('\n')
 
     if isinstance(output, basestring):
         out.close()
+

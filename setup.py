@@ -13,7 +13,8 @@ setup(
         'opennbt'
     ],
     scripts=[
-        'scripts/debug-nbt'
+        'scripts/debug-nbt',
+        'scripts/debug-region'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
