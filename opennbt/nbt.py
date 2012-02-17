@@ -7,6 +7,13 @@ A tiny library for reading & writing NBT files, used for the game
 import gzip
 import struct
 
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
+from .helpers import is_pocket
+
 
 class BaseTag(object):
     """
@@ -29,15 +36,15 @@ class BaseTag(object):
         """
         Reads in a length-prefixed UTF8 string.
         """
-        length, = rd('>h')
-        return rd('>%ds' % length)[0]
+        length, = rd('h')
+        return rd('%ds' % length)[0]
 
     @staticmethod
     def write_utf8(wt, value):
         """
         Writes a length-prefixed UTF8 string.
         """
-        wt('>h%ss' % len(value), len(value), value)
+        wt('h%ss' % len(value), len(value), value)
 
     @classmethod
     def read(cls, rd, has_name=True):
@@ -57,7 +64,7 @@ class BaseTag(object):
         if not hasattr(self, 'STRUCT_FMT'):
             raise NotImplementedError()
         if self.name is not None:
-            wt('>b', _tags.index(self.__class__))
+            wt('b', _tags.index(self.__class__))
             BaseTag.write_utf8(wt, self.name)
 
         wt(self.STRUCT_FMT, self.value)
@@ -83,42 +90,42 @@ class BaseTag(object):
 
 
 class TAG_Byte(BaseTag):
-    STRUCT_FMT = '>b'
+    STRUCT_FMT = 'b'
 
 
 class TAG_Short(BaseTag):
-    STRUCT_FMT = '>h'
+    STRUCT_FMT = 'h'
 
 
 class TAG_Int(BaseTag):
-    STRUCT_FMT = '>i'
+    STRUCT_FMT = 'i'
 
 
 class TAG_Long(BaseTag):
-    STRUCT_FMT = '>q'
+    STRUCT_FMT = 'q'
 
 
 class TAG_Float(BaseTag):
-    STRUCT_FMT = '>f'
+    STRUCT_FMT = 'f'
 
 
 class TAG_Double(BaseTag):
-    STRUCT_FMT = '>d'
+    STRUCT_FMT = 'd'
 
 
 class TAG_Byte_Array(BaseTag):
     @classmethod
     def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
-        length, = rd('>i')
-        return cls(name, rd('>%ss' % length)[0])
+        length, = rd('i')
+        return cls(name, rd('%ss' % length)[0])
 
     def write(self, wt):
         if self.name is not None:
-            wt('>b', 7)
+            wt('b', 7)
             BaseTag.write_utf8(wt, self.name)
 
-        wt('>i%ss' % len(self.value), len(self.value), self.value)
+        wt('i%ss' % len(self.value), len(self.value), self.value)
 
     def pretty(self, indent=0, indent_str='  '):
         return '%sTAG_Byte_Array(%r): [%d bytes]' % (
@@ -137,9 +144,9 @@ class TAG_String(BaseTag):
 
     def write(self, wt):
         if self.name is not None:
-            wt('>b', 8)
+            wt('b', 8)
             BaseTag.write_utf8(wt, self.name)
-        wt('>h%ss' % len(self.value), len(self.value), self.value)
+        wt('h%ss' % len(self.value), len(self.value), self.value)
 
 
 class TAG_List(BaseTag):
@@ -148,13 +155,13 @@ class TAG_List(BaseTag):
     tags of the same type.
     """
     def __init__(self, name, tag_type, value):
-        BaseTag.__init__(name, value)
+        BaseTag.__init__(self, name, value)
         self._type = tag_type
 
     @classmethod
     def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
-        tag_type, length = rd('>bi')
+        tag_type, length = rd('bi')
         real_type = _tags[tag_type]
         return TAG_List(
             name,
@@ -164,10 +171,10 @@ class TAG_List(BaseTag):
 
     def write(self, wt):
         if self.name is not None:
-            wt('>b', 9)
+            wt('b', 9)
             BaseTag.write_utf8(wt, self.name)
 
-        wt('>bi', self._type, len(self.value))
+        wt('bi', self._type, len(self.value))
         for item in self.value:
             item.write(wt)
 
@@ -191,7 +198,7 @@ class TAG_Compound(BaseTag):
         name = BaseTag.read_utf8(rd) if has_name else None
         final = {}
         while True:
-            tag, = rd('>b')
+            tag, = rd('b')
             # EndTag
             if tag == 0:
                 break
@@ -203,14 +210,14 @@ class TAG_Compound(BaseTag):
 
     def write(self, wt):
         if self.name is not None:
-            wt('>b', 10)
+            wt('b', 10)
             BaseTag.write_utf8(wt, self.name)
 
         for v in self.value.itervalues():
             v.write(wt)
 
         # EndTag
-        wt('>b', 0)
+        wt('b', 0)
 
     def pretty(self, indent=0, indent_str='  '):
         t = []
@@ -242,7 +249,17 @@ _tags = (
 
 
 class NBTFile(TAG_Compound):
-    def __init__(self, io=None, root_name=None, compressed=True):
+    def __init__(self, io=None, root_name=None, compressed=True,
+            little_endian=False, pocket_name=None):
+        """
+        Loads or creates a new NBT file. `io` may be either a file-like object
+        providing `read()`, or a path to a file.
+
+        If `io` is a path, then `NBTFile()` will attempt to automatically
+        detect and handle the pocket minecraft headers, which it cannot
+        do otherwise. In this case, you must pass either "entities.dat" or
+        "level.dat" to `pocket_name`, or handle the headers yourself.
+        """
         if io is None:
             # We have no pre-existing NBT file.
             if root_name is None:
@@ -252,14 +269,27 @@ class NBTFile(TAG_Compound):
             super(NBTFile, self).__init__(root_name, {})
             return
 
+        self._pocket_type = None
+        if isinstance(io, basestring):
+            # We've got a file path.
+            self._pocket_type = is_pocket(io, compressed=compressed)
+
         fin = open(io, 'rb') if isinstance(io, basestring) else io
         src = gzip.GzipFile(fileobj=fin, mode='rb') if compressed else fin
 
+        self._little = (little_endian or self._pocket_type)
         def read(fmt):
+            fmt = '<%s' % fmt if self._little else '>%s' % fmt
             return struct.unpack(fmt, src.read(struct.calcsize(fmt)))
 
-        # Discard the leading tag prefx, we know it's a compound.
-        read('>b')
+        # Discard the pocket format headers.
+        if self._pocket_type == "entities.dat":
+            read('12b')
+        elif self._pocket_type == "level.dat":
+            read('8b')
+
+        # Discard the compound tag.
+        read('b')
         tmp = TAG_Compound.read(read)
 
         self._name = tmp.name
@@ -271,14 +301,58 @@ class NBTFile(TAG_Compound):
         if isinstance(io, basestring):
             fin.close()
 
-    def save(self, io, compressed=True):
+    def save(self, io, compressed=True, little_endian=None,
+            force_standard=False):
+        """
+        Saves the `NBTFile()` to `io` which is either a path or a file-like
+        object providing `write()`.
+
+        By default `save()` tries to produce a file as close to the original
+        as possible.
+
+        Endianess can be forced by passing `True` or `False` to
+        `little_endian`.
+
+        Files loaded as portable minecraft files can be saved as regular NBT
+        files by passing `True` to `force_standard`.
+        """
         fout = open(io, 'wb') if isinstance(io, basestring) else io
         src = gzip.GzipFile(fileobj=fout, mode='wb') if compressed else fout
 
+        little = self._little if little_endian is None else little_endian
+
+        temporary = StringIO()
+
         def write(fmt, *args):
+            fmt = '<%s' % fmt if little else '>%s' % fmt
+            temporary.write(struct.pack(fmt, *args))
+
+        def real_write(fmt, *args):
+            fmt = '<%s' % fmt if little else '>%s' % fmt
             src.write(struct.pack(fmt, *args))
 
         self.write(write)
+
+        buff = temporary.getvalue()
+        temporary.close()
+
+        if self._pocket_type and not force_standard:
+            if self._pocket_type == "entities.dat":
+                real_write('bbbbII',
+                    0x45, # 'E'
+                    0x4E, # 'N'
+                    0x54, # 'T'
+                    0x00, # '\x00'
+                    0x01, # Version
+                    len(buff) # Content length
+                )
+            elif self._pocket_type == "level.dat":
+                real_write('II',
+                    0x02, # Version,
+                    len(buff) # Content length
+                )
+
+        src.write(buff)
 
         if compressed:
             src.close()
