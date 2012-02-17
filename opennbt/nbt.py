@@ -40,18 +40,18 @@ class BaseTag(object):
         wt('>h%ss' % len(value), len(value), value)
 
     @classmethod
-    def read(cl, rd, has_name=True):
+    def read(cls, rd, has_name=True):
         """
         Read the tag in using the reader `rd`.
         If `has_name` is `False`, skip reading the tag name.
         """
-        if not hasattr(cl, 'STRUCT_FMT'):
+        if not hasattr(cls, 'STRUCT_FMT'):
             raise NotImplementedError()
 
         name = BaseTag.read_utf8(rd) if has_name else None
-        value, = rd(cl.STRUCT_FMT)
+        value, = rd(cls.STRUCT_FMT)
 
-        return cl(name, value)
+        return cls(name, value)
 
     def write(self, wt):
         if not hasattr(self, 'STRUCT_FMT'):
@@ -108,10 +108,10 @@ class TAG_Double(BaseTag):
 
 class TAG_Byte_Array(BaseTag):
     @classmethod
-    def read(cl, rd, has_name=True):
+    def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
         length, = rd('>i')
-        return cl(name, rd('>%ss' % length)[0])
+        return cls(name, rd('>%ss' % length)[0])
 
     def write(self, wt):
         if self.name is not None:
@@ -130,10 +130,10 @@ class TAG_Byte_Array(BaseTag):
 
 class TAG_String(BaseTag):
     @classmethod
-    def read(cl, rd, has_name=True):
+    def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
         value = BaseTag.read_utf8(rd)
-        return cl(name, value)
+        return cls(name, value)
 
     def write(self, wt):
         if self.name is not None:
@@ -148,12 +148,11 @@ class TAG_List(BaseTag):
     tags of the same type.
     """
     def __init__(self, name, tag_type, value):
+        BaseTag.__init__(name, value)
         self._type = tag_type
-        self._name = name
-        self._value = value
 
     @classmethod
-    def read(cl, rd, has_name=True):
+    def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
         tag_type, length = rd('>bi')
         real_type = _tags[tag_type]
@@ -188,7 +187,7 @@ class TAG_List(BaseTag):
 
 class TAG_Compound(BaseTag):
     @classmethod
-    def read(cl, rd, has_name=True):
+    def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
         final = {}
         while True:
@@ -200,7 +199,7 @@ class TAG_Compound(BaseTag):
             tmp = _tags[tag].read(rd)
             final[tmp.name] = tmp
 
-        return cl(name, final)
+        return cls(name, final)
 
     def write(self, wt):
         if self.name is not None:
@@ -250,7 +249,7 @@ class NBTFile(TAG_Compound):
                 raise ValueError(
                     'root_name must not be none if no file is provided!'
                 )
-            super(TAG_Compound, self).__init__(root_name, {})
+            super(NBTFile, self).__init__(root_name, {})
             return
 
         fin = open(io, 'rb') if isinstance(io, basestring) else io
