@@ -233,6 +233,28 @@ class TAG_Compound(BaseTag):
 
         return '\n'.join(t)
 
+
+class TAG_Int_Array(BaseTag):
+    @classmethod
+    def read(cls, rd, has_name=True):
+        name = BaseTag.read_utf8(rd) if has_name else None
+        length, = rd('i')
+        return cls(name, rd('%si' % length)[0])
+
+    def write(self, wt):
+        if self.name is not None:
+            wt('b', 11)
+            BaseTag.write_utf8(wt, self.name)
+
+        wt('i%si' % len(self.value), len(self.value), self.value)
+
+    def pretty(self, indent=0, indent_str='  '):
+        return '%sTAG_Int_Array(%r): [%d bytes]' % (
+            indent_str * indent,
+            self.name,
+            len(self.value)
+        )
+
 _tags = (
     None,
     TAG_Byte,
@@ -244,7 +266,8 @@ _tags = (
     TAG_Byte_Array,
     TAG_String,
     TAG_List,
-    TAG_Compound
+    TAG_Compound,
+    TAG_Int_Array
 )
 
 
