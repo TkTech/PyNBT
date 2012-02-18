@@ -180,7 +180,7 @@ class TAG_List(BaseTag):
 
     def pretty(self, indent=0, indent_str='  '):
         t = []
-        t.append('%sTAG_List(%r): %d entires' % (
+        t.append('%sTAG_List(%r): %d entries' % (
             indent_str * indent,
             self.name,
             len(self.value)
