@@ -12,6 +12,11 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    from .odict import odict as OrderedDict
+
 from .helpers import is_pocket
 
 
@@ -196,7 +201,8 @@ class TAG_Compound(BaseTag):
     @classmethod
     def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
-        final = {}
+        final = OrderedDict()
+
         while True:
             tag, = rd('b')
             # EndTag
