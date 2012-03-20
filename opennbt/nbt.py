@@ -162,7 +162,10 @@ class TAG_List(BaseTag):
     """
     def __init__(self, name, tag_type, value):
         BaseTag.__init__(self, name, value)
-        self._type = tag_type
+        if isinstance(tag_type, int):
+            self._type = tag_type
+        else:
+            self._type = _tags.index(tag_type)
 
     @classmethod
     def read(cls, rd, has_name=True):
@@ -280,7 +283,7 @@ _tags = (
 
 class NBTFile(TAG_Compound):
     def __init__(self, io=None, root_name=None, compressed=True,
-            little_endian=False, pocket_name=None):
+            little_endian=False, pocket_name=None, value=None):
         """
         Loads or creates a new NBT file. `io` may be either a file-like object
         providing `read()`, or a path to a file.
@@ -290,16 +293,18 @@ class NBTFile(TAG_Compound):
         do otherwise. In this case, you must pass either "entities.dat" or
         "level.dat" to `pocket_name`, or handle the headers yourself.
         """
+        self._pocket_type = None
+        self._little = (little_endian or self._pocket_type)
+
         if io is None:
             # We have no pre-existing NBT file.
             if root_name is None:
                 raise ValueError(
                     'root_name must not be none if no file is provided!'
                 )
-            super(NBTFile, self).__init__(root_name, {})
+            super(NBTFile, self).__init__(root_name, value if value else {})
             return
 
-        self._pocket_type = None
         if isinstance(io, basestring):
             # We've got a file path.
             self._pocket_type = is_pocket(io, compressed=compressed)
@@ -307,7 +312,6 @@ class NBTFile(TAG_Compound):
         fin = open(io, 'rb') if isinstance(io, basestring) else io
         src = gzip.GzipFile(fileobj=fin, mode='rb') if compressed else fin
 
-        self._little = (little_endian or self._pocket_type)
         def read(fmt):
             fmt = '<%s' % fmt if self._little else '>%s' % fmt
             return struct.unpack(fmt, src.read(struct.calcsize(fmt)))
