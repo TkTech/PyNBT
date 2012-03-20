@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name='OpenNBT',
-    version='0.0.1',
+    version='1.0.0',
     description='Tiny, liberally-licensed NBT library. NBT is the datafile format used in Minecraft.',
     author='Tyler Kennedy',
     author_email='tk@tkte.ch',
