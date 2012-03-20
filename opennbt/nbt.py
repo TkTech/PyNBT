@@ -249,7 +249,7 @@ class TAG_Int_Array(BaseTag):
     def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
         length, = rd('i')
-        return cls(name, rd('%si' % length)[0])
+        return cls(name, rd('%si' % length))
 
     def write(self, wt):
         if self.name is not None:
