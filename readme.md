@@ -50,6 +50,7 @@ nbt.save('out.nbt')
 Reading is simple, and will accept any file-like object providing `read()` or a path to a file. If a path is provided, OpenNBT may open it multiple times to figure out the format. If you provide a file-like object, you need to specify the details yourself.
 
 Simply pretty-printing the file created from the example under writing:
+
 ```python
 from opennbt import NBTFile
 
