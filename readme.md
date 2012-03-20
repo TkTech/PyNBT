@@ -1,6 +1,6 @@
 # OpenNBT
 
-OpenNBT is a tiny, liberally licenced (BSD) NBT library.
+OpenNBT is a tiny, liberally licenced (MIT) NBT library.
 It supports reading and writing compressed, uncompressed, big endian, little endian, or pocket edition (v2) NBT files transparently. It also includes helpers for region files and pocket detection.
 
 ## Scripts
