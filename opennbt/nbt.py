@@ -269,6 +269,10 @@ class TAG_Compound(BaseTag, dict):
         """
         if value.name is None:
             value._name = key
+
+        if not isinstance(key, basestring):
+            raise TypeError('NBT tag names must be a string!')
+
         super(TAG_Compound, self).__setitem__(key, value)
 
     def update(self, *args, **kwargs):
@@ -280,6 +284,8 @@ class TAG_Compound(BaseTag, dict):
             if item.name is None:
                 item._name = key
 
+            if not isinstance(key, basestring):
+                raise TypeError('NBT tag names must be a string!')
 
 class TAG_Int_Array(BaseTag):
     @classmethod
