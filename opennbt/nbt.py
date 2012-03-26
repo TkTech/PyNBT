@@ -19,7 +19,7 @@ class BaseTag(object):
     """
     Implements methods common to all NBT tags.
     """
-    def __init__(self, name, value):
+    def __init__(self, value, name=None):
         self._name = name
         self._value = value
 
@@ -58,11 +58,16 @@ class BaseTag(object):
         name = BaseTag.read_utf8(rd) if has_name else None
         value, = rd(cls.STRUCT_FMT)
 
-        return cls(name, value)
+        return cls(value, name)
 
     def write(self, wt):
+        """
+        Write the tag to disk using the writer `wt`.
+        If the tag's `name` is None, no name will be written.
+        """
         if not hasattr(self, 'STRUCT_FMT'):
             raise NotImplementedError()
+
         if self.name is not None:
             wt('b', _tags.index(self.__class__))
             BaseTag.write_utf8(wt, self.name)
@@ -84,8 +89,8 @@ class BaseTag(object):
     def __repr__(self):
         return '%s(%r, %r)' % (
             self.__class__.__name__,
-            self.name,
-            self.value
+            self.value,
+            self.name
         )
 
 
@@ -118,7 +123,7 @@ class TAG_Byte_Array(BaseTag):
     def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
         length, = rd('i')
-        return cls(name, rd('%ss' % length)[0])
+        return cls(rd('%ss' % length)[0], name)
 
     def write(self, wt):
         if self.name is not None:
@@ -140,7 +145,7 @@ class TAG_String(BaseTag):
     def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
         value = BaseTag.read_utf8(rd)
-        return cls(name, value)
+        return cls(value, name)
 
     def write(self, wt):
         if self.name is not None:
@@ -154,8 +159,8 @@ class TAG_List(BaseTag):
     Keep in mind that a TAG_List is only capable of storing
     tags of the same type.
     """
-    def __init__(self, name, tag_type, value):
-        BaseTag.__init__(self, name, value)
+    def __init__(self, tag_type, value, name=None):
+        BaseTag.__init__(self, value, name)
         if isinstance(tag_type, int):
             self._type = tag_type
         else:
@@ -167,9 +172,9 @@ class TAG_List(BaseTag):
         tag_type, length = rd('bi')
         real_type = _tags[tag_type]
         return TAG_List(
-            name,
             tag_type,
-            [real_type.read(rd, has_name=False) for x in xrange(0, length)]
+            [real_type.read(rd, has_name=False) for x in xrange(0, length)],
+            name
         )
 
     def write(self, wt):
@@ -195,7 +200,19 @@ class TAG_List(BaseTag):
         return '\n'.join(t)
 
 
-class TAG_Compound(BaseTag):
+class TAG_Compound(BaseTag, dict):
+    def __init__(self, value, name=None):
+        self._name = name
+        self._value = self
+        self.update(value)
+
+    @property
+    def value(self):
+        """
+        Mimic having a value property to keep the TAG_* interface.
+        """
+        return self
+
     @classmethod
     def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
@@ -210,7 +227,7 @@ class TAG_Compound(BaseTag):
             tmp = _tags[tag].read(rd)
             final[tmp.name] = tmp
 
-        return cls(name, final)
+        return cls(final, name)
 
     def write(self, wt):
         if self.name is not None:
@@ -231,11 +248,37 @@ class TAG_Compound(BaseTag):
             len(self.value)
         ))
         t.append('%s{' % (indent_str * indent))
-        for v in self.value.itervalues():
+        for v in self.itervalues():
             t.append(v.pretty(indent + 1))
         t.append('%s}' % (indent_str * indent))
 
         return '\n'.join(t)
+
+    def __repr__(self):
+        return '%s(%r entries, %r)' % (
+            self.__class__.__name__,
+            len(self),
+            self.name
+        )
+
+    def __setitem__(self, key, value):
+        """
+        Sets the TAG_*'s name if it isn't already set to that of the key
+        it's being assigned to. This results in cleaner code, as the name
+        does not need to be specified twice.
+        """
+        if value.name is None:
+            value._name = key
+        super(TAG_Compound, self).__setitem__(key, value)
+
+    def update(self, *args, **kwargs):
+        """
+        See `__setitem__`.
+        """
+        super(TAG_Compound, self).update(*args, **kwargs)
+        for key, item in self.items():
+            if item.name is None:
+                item._name = key
 
 
 class TAG_Int_Array(BaseTag):
@@ -243,7 +286,7 @@ class TAG_Int_Array(BaseTag):
     def read(cls, rd, has_name=True):
         name = BaseTag.read_utf8(rd) if has_name else None
         length, = rd('i')
-        return cls(name, rd('%si' % length))
+        return cls(rd('%si' % length), name)
 
     def write(self, wt):
         if self.name is not None:
@@ -276,7 +319,7 @@ _tags = (
 
 
 class NBTFile(TAG_Compound):
-    def __init__(self, io=None, root_name=None, compressed=True,
+    def __init__(self, io=None, name='', compressed=True,
             little_endian=False, pocket_name=None, value=None):
         """
         Loads or creates a new NBT file. `io` may be either a file-like object
@@ -292,11 +335,7 @@ class NBTFile(TAG_Compound):
 
         if io is None:
             # We have no pre-existing NBT file.
-            if root_name is None:
-                raise ValueError(
-                    'root_name must not be none if no file is provided!'
-                )
-            super(NBTFile, self).__init__(root_name, value if value else {})
+            super(NBTFile, self).__init__(value if value else {}, name)
             return
 
         if isinstance(io, basestring):
@@ -319,9 +358,7 @@ class NBTFile(TAG_Compound):
         # Discard the compound tag.
         read('b')
         tmp = TAG_Compound.read(read)
-
-        self._name = tmp.name
-        self._value = tmp.value
+        super(NBTFile, self).__init__(tmp, tmp._name)
 
         if compressed:
             src.close()

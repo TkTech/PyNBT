@@ -29,19 +29,22 @@ easily changed.
 When writing NBT files with OpenNBT, every tag should be treated as if it was immutable. This is to simplify future changes to both the library and the format.
 Developer wise, building NBT files is less convienient, but very explicit. This is done because of the differences in basic types between NBT and python.
 
+**NOTE**: Beginning with version 1.1.0, names are optional for TAG_*'s that are added to a TAG_Compound, as they will be given the same name as their key. If you do
+specify a name, it will be used instead. This breaks compatibility with old code, as the position of the `name` and `value` parameter have now swapped.
+
 ```python
 from opennbt import NBTFile, TAG_Long, TAG_List, TAG_String
 
 structure = {
-    'long_test': TAG_Long('long_test', 104005),
-    'list_test': TAG_List('list_test', TAG_String, [
-        TAG_String(None, 'Timmy'),
-        TAG_String(None, 'Billy'),
-        TAG_String(None, 'Sally')
+    'long_test': TAG_Long(104005),
+    'list_test': TAG_List(TAG_String, [
+        TAG_String('Timmy'),
+        TAG_String('Billy'),
+        TAG_String('Sally')
     ])
 }
 
-nbt = NBTFile(root_name='', value=structure)
+nbt = NBTFile(value=structure)
 nbt.save('out.nbt')
 ```
 
@@ -85,3 +88,18 @@ if 'list_test' in nbt.value:
     for tag in nbt.value['list_test'].value:
         print tag
 ```
+
+## Changelog
+These changelogs are summaries only and not comprehensive. See the commit history between tags for full changes.
+
+### v1.1.0
+ - Breaks compatibility with older code, but allows much more convienient creation of `TAG_Compound`. `name` and `value` have in most cases swapped spots.
+ - `name` is now the last argument of every `TAG_*`, and optional for children of a `TAG_Compound`. Instead, they'll be given the key they're assigned to as a name.
+ - `TAG_Compound`s can now be treated like dictionaries for convienience. `.value` simply maps to itself.
+
+### v1.0.1
+ - Small bugfixes.
+ - Adds support for `TAG_Int_Array`.
+
+### v1.0.0
+ - First release.
