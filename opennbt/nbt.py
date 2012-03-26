@@ -367,17 +367,17 @@ class NBTFile(TAG_Compound):
         if self._pocket_type and not force_standard:
             if self._pocket_type == "entities.dat":
                 real_write('bbbbII',
-                    0x45, # 'E'
-                    0x4E, # 'N'
-                    0x54, # 'T'
-                    0x00, # '\x00'
-                    0x01, # Version
-                    len(buff) # Content length
+                    0x45,  # 'E'
+                    0x4E,  # 'N'
+                    0x54,  # 'T'
+                    0x00,  # '\x00'
+                    0x01,  # Version
+                    len(buff)  # Content length
                 )
             elif self._pocket_type == "level.dat":
                 real_write('II',
-                    0x02, # Version,
-                    len(buff) # Content length
+                    0x02,  # Version,
+                    len(buff)  # Content length
                 )
 
         src.write(buff)
