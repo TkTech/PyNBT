@@ -7,6 +7,7 @@ performance both in speed or size.
 """
 import zlib
 import struct
+import os.path
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -57,7 +58,7 @@ class RegionFile(list):
                 self.append((None, None))
                 continue
             elif compression == 1:
-                # gzip'd chunk. This never occurs in practice, 
+                # gzip'd chunk. This never occurs in practice,
                 # but we'll support it anyways.
                 buff = StringIO(src.read(length))
                 self.append((
@@ -72,6 +73,31 @@ class RegionFile(list):
                     timestamp,
                     NBTFile(buff, compressed=False)
                 ))
+
+    @staticmethod
+    def used_chunks(io):
+        """
+        Returns a list in the form <x, y> of chunks that are used within this
+        region file, with <x, y> in chunk coordinates. This exist for quickly
+        scanning a region directory for chunks and is much faster than loading
+        the entire region file (0.03s vs 3.06s for 40 files).
+        """
+        fin = open(io, 'rb')
+        locs = struct.unpack('>1024i', fin.read(4096))
+        fin.close()
+
+        rx, ry = os.path.split(io)[1].split('.')[1:3]
+        rx, ry = int(rx) << 5, int(ry) << 5
+
+        o = []
+        for i, l in enumerate(locs):
+            if l == 0:
+                continue
+
+            o.append(
+                ((i & 0x1F) + rx, (i >> 5) + ry)
+            )
+        return o
 
     def pretty(self):
         """
