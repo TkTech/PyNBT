@@ -76,7 +76,7 @@ TAG_Compound(''): 2 entries
 Every tag exposes a minimum of two fields, `.name` and `.value`. Every type's value maps to a plain Python type, such as a `dict()` for `TAG_Compound` and a list for `TAG_List`. Every tag
 also provides complete `__repr__` methods for printing. This makes traversal very simple and familiar to existing Python developers.
 
-```
+```python
 nbt = NBTFile('out.nbt')
 for name, tag in nbt.value.items():
     print name, tag
