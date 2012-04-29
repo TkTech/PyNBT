@@ -7,13 +7,6 @@ A tiny library for reading & writing NBT files, used for the game
 import gzip
 import struct
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
-
-from .helpers import is_pocket
-
 
 def _read_utf8(rd):
     """Reads in a length-prefixed UTF8 string."""
@@ -310,108 +303,59 @@ _tags = (
 
 
 class NBTFile(TAG_Compound):
-    def __init__(self, io=None, name='', compressed=True,
-            little_endian=False, pocket_name=None, value=None):
+    def __init__(self, io=None, name='', compressed=True, little_endian=False,
+            value=None):
         """
         Loads or creates a new NBT file. `io` may be either a file-like object
         providing `read()`, or a path to a file.
-
-        If `io` is a path, then `NBTFile()` will attempt to automatically
-        detect and handle the pocket minecraft headers, which it cannot
-        do otherwise. In this case, you must pass either "entities.dat" or
-        "level.dat" to `pocket_name`, or handle the headers yourself.
         """
-        self._pocket_type = None
-        self._little = (little_endian or self._pocket_type)
-
+        # No file or path given, so we're creating a new NBTFile.
         if io is None:
-            # We have no pre-existing NBT file.
             super(NBTFile, self).__init__(value if value else {}, name)
             return
 
-        if isinstance(io, basestring):
-            # We've got a file path.
-            self._pocket_type = is_pocket(io, compressed=compressed)
+        f = open(io, 'rb') if isinstance(io, basestring) else io
+        g = gzip.GzipFile(fileobj=f, mode='rb') if compressed else f
 
-        fin = open(io, 'rb') if isinstance(io, basestring) else io
-        src = gzip.GzipFile(fileobj=fin, mode='rb') if compressed else fin
+        if little_endian:
+            x = lambda f: struct.unpack('<' + f,
+                g.read(struct.calcsize('<' + f)))
+        else:
+            x = lambda f: struct.unpack('>' + f,
+                g.read(struct.calcsize('>' + f)))
 
-        def read(fmt):
-            fmt = '<%s' % fmt if self._little else '>%s' % fmt
-            return struct.unpack(fmt, src.read(struct.calcsize(fmt)))
+        # We skip the first byte as it will always be a TAG_Compound
+        # if this is a valid NBTFile.
+        if x('b')[0] != 0x0A:
+            raise IOError('Not a valid NBT file.')
 
-        # Discard the pocket format headers.
-        if self._pocket_type == "entities.dat":
-            read('12b')
-        elif self._pocket_type == "level.dat":
-            read('8b')
-
-        # Discard the compound tag.
-        read('b')
-        tmp = TAG_Compound.read(read)
+        tmp = TAG_Compound.read(x)
         super(NBTFile, self).__init__(tmp, tmp.name)
 
-        if compressed:
-            src.close()
-
+        # Close io only if we're the one who opened it.
         if isinstance(io, basestring):
-            fin.close()
+            # This will not close the underlying fileobj.
+            if compressed:
+                g.close()
+            f.close()
 
-    def save(self, io, compressed=True, little_endian=None,
-            force_standard=False):
+    def save(self, io, compressed=True, little_endian=False):
         """
         Saves the `NBTFile()` to `io` which is either a path or a file-like
         object providing `write()`.
-
-        By default `save()` tries to produce a file as close to the original
-        as possible.
-
-        Endianess can be forced by passing `True` or `False` to
-        `little_endian`.
-
-        Files loaded as portable minecraft files can be saved as regular NBT
-        files by passing `True` to `force_standard`.
         """
-        fout = open(io, 'wb') if isinstance(io, basestring) else io
-        src = gzip.GzipFile(fileobj=fout, mode='wb') if compressed else fout
+        f = open(io, 'wb') if isinstance(io, basestring) else io
+        g = gzip.GzipFile(fileobj=f, mode='wb') if compressed else f
 
-        little = self._little if little_endian is None else little_endian
+        if little_endian:
+            w = lambda f, *args: g.write(struct.pack('<' + f, *args))
+        else:
+            w = lambda f, *args: g.write(struct.pack('>' + f, *args))
 
-        temporary = StringIO()
+        self.write(w)
 
-        def write(fmt, *args):
-            fmt = '<%s' % fmt if little else '>%s' % fmt
-            temporary.write(struct.pack(fmt, *args))
-
-        def real_write(fmt, *args):
-            fmt = '<%s' % fmt if little else '>%s' % fmt
-            src.write(struct.pack(fmt, *args))
-
-        self.write(write)
-
-        buff = temporary.getvalue()
-        temporary.close()
-
-        if self._pocket_type and not force_standard:
-            if self._pocket_type == "entities.dat":
-                real_write('bbbbII',
-                    0x45,  # 'E'
-                    0x4E,  # 'N'
-                    0x54,  # 'T'
-                    0x00,  # '\x00'
-                    0x01,  # Version
-                    len(buff)  # Content length
-                )
-            elif self._pocket_type == "level.dat":
-                real_write('II',
-                    0x02,  # Version,
-                    len(buff)  # Content length
-                )
-
-        src.write(buff)
-
-        if compressed:
-            src.close()
-
+        # Close io only if we're the one who opened it.
         if isinstance(io, basestring):
-            fout.close()
+            if compressed:
+                g.close()
+            f.close()
