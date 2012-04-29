@@ -16,6 +16,9 @@ class CreationTest(unittest.TestCase):
         n['string'] = TAG_String('Testing')
         n['int_array'] = TAG_Int_Array([45, 5, 6])
         n['byte_array'] = TAG_Byte_Array('four')
+        n['list'] = TAG_List(TAG_Int, [
+            TAG_Int(4)
+        ])
         self.nbt.save('__test__.nbt')
 
 if __name__ == '__main__':

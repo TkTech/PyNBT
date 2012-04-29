@@ -155,13 +155,15 @@ class TAG_String(BaseTag):
     pass
 
 
-class TAG_List(BaseTag):
+class TAG_List(BaseTag, list):
     """
     Keep in mind that a TAG_List is only capable of storing
     tags of the same type.
     """
     def __init__(self, tag_type, value, name=None):
-        BaseTag.__init__(self, value, name)
+        self.name = name
+        self.value = self
+        self.extend(value)
         if isinstance(tag_type, int):
             self._type = tag_type
         else:
@@ -219,9 +221,7 @@ class TAG_Compound(BaseTag, dict):
         super(TAG_Compound, self).__setitem__(key, value)
 
     def update(self, *args, **kwargs):
-        """
-        See `__setitem__`.
-        """
+        """See `__setitem__`."""
         super(TAG_Compound, self).update(*args, **kwargs)
         for key, item in self.items():
             if item.name is None:
