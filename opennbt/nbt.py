@@ -129,7 +129,7 @@ class TAG_Double(BaseTag):
 class TAG_Byte_Array(BaseTag):
     def write(self, wt):
         if self.name is not None:
-            wt('b', 7)
+            wt('b', 0x07)
             _write_utf8(wt, self.name)
 
         wt('i%ss' % len(self.value), len(self.value), self.value)
@@ -145,7 +145,7 @@ class TAG_Byte_Array(BaseTag):
 class TAG_String(BaseTag):
     def write(self, wt):
         if self.name is not None:
-            wt('b', 8)
+            wt('b', 0x08)
             _write_utf8(wt, self.name)
         wt('h%ss' % len(self.value), len(self.value), self.value)
 
@@ -164,7 +164,7 @@ class TAG_List(BaseTag):
 
     def write(self, wt):
         if self.name is not None:
-            wt('b', 9)
+            wt('b', 0x09)
             _write_utf8(wt, self.name)
 
         wt('bi', self._type, len(self.value))
@@ -193,7 +193,7 @@ class TAG_Compound(BaseTag, dict):
 
     def write(self, wt):
         if self.name is not None:
-            wt('b', 10)
+            wt('b', 0x0A)
             _write_utf8(wt, self.name)
 
         for v in self.value.itervalues():
@@ -231,7 +231,6 @@ class TAG_Compound(BaseTag, dict):
         """
         if value.name is None:
             value.name = key
-
         super(TAG_Compound, self).__setitem__(key, value)
 
     def update(self, *args, **kwargs):
@@ -247,7 +246,7 @@ class TAG_Compound(BaseTag, dict):
 class TAG_Int_Array(BaseTag):
     def write(self, wt):
         if self.name is not None:
-            wt('b', 11)
+            wt('b', 0x0B)
             _write_utf8(wt, self.name)
 
         wt('i%si' % len(self.value), len(self.value), self.value)
