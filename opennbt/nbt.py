@@ -50,7 +50,7 @@ class BaseTag(object):
             real_type = _tags[tag_type]
             return cls(
                 tag_type,
-                [real_type.read(rd, has_name=False) for x in xrange(0, length)],
+                [real_type.read(rd, has_name=False) for x in range(0, length)],
                 name
             )
         # Handle TAG_String as a complex type.
