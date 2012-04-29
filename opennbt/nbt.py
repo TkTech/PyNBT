@@ -30,13 +30,43 @@ class BaseTag(object):
         Read the tag in using the reader `rd`.
         If `has_name` is `False`, skip reading the tag name.
         """
-        if not hasattr(cls, 'STRUCT_FMT'):
-            raise NotImplementedError()
-
         name = _read_utf8(rd) if has_name else None
-        value, = rd(cls.STRUCT_FMT)
+        # Handle TAG_Compound as a complex type.
+        if cls is TAG_Compound:
+            final = {}
 
-        return cls(value, name)
+            while True:
+                tag, = rd('b')
+                # EndTag
+                if tag == 0:
+                    break
+
+                tmp = _tags[tag].read(rd)
+                final[tmp.name] = tmp
+            return cls(final, name)
+        # Handle TAG_List as a complex type.
+        elif cls is TAG_List:
+            tag_type, length = rd('bi')
+            real_type = _tags[tag_type]
+            return cls(
+                tag_type,
+                [real_type.read(rd, has_name=False) for x in xrange(0, length)],
+                name
+            )
+        # Handle TAG_String as a complex type.
+        elif cls is TAG_String:
+            value = _read_utf8(rd)
+            return cls(value, name)
+        # Handle TAG_Byte_Array as a complex type.
+        elif cls is TAG_Byte_Array:
+            length, = rd('i')
+            return cls(rd('%ss' % length)[0], name)
+        # Handle TAG_Int_Array as a complex type.
+        elif cls is TAG_Int_Array:
+            length, = rd('i')
+            return cls(rd('%si' % length)[0], name)
+
+        return cls(rd(cls.STRUCT_FMT)[0], name)
 
     def write(self, wt):
         """
@@ -97,12 +127,6 @@ class TAG_Double(BaseTag):
 
 
 class TAG_Byte_Array(BaseTag):
-    @classmethod
-    def read(cls, rd, has_name=True):
-        name = _read_utf8(rd) if has_name else None
-        length, = rd('i')
-        return cls(rd('%ss' % length)[0], name)
-
     def write(self, wt):
         if self.name is not None:
             wt('b', 7)
@@ -119,12 +143,6 @@ class TAG_Byte_Array(BaseTag):
 
 
 class TAG_String(BaseTag):
-    @classmethod
-    def read(cls, rd, has_name=True):
-        name = _read_utf8(rd) if has_name else None
-        value = _read_utf8(rd)
-        return cls(value, name)
-
     def write(self, wt):
         if self.name is not None:
             wt('b', 8)
@@ -143,17 +161,6 @@ class TAG_List(BaseTag):
             self._type = tag_type
         else:
             self._type = _tags.index(tag_type)
-
-    @classmethod
-    def read(cls, rd, has_name=True):
-        name = _read_utf8(rd) if has_name else None
-        tag_type, length = rd('bi')
-        real_type = _tags[tag_type]
-        return TAG_List(
-            tag_type,
-            [real_type.read(rd, has_name=False) for x in xrange(0, length)],
-            name
-        )
 
     def write(self, wt):
         if self.name is not None:
@@ -183,22 +190,6 @@ class TAG_Compound(BaseTag, dict):
         self.name = name
         self.value = self
         self.update(value)
-
-    @classmethod
-    def read(cls, rd, has_name=True):
-        name = _read_utf8(rd) if has_name else None
-        final = {}
-
-        while True:
-            tag, = rd('b')
-            # EndTag
-            if tag == 0:
-                break
-
-            tmp = _tags[tag].read(rd)
-            final[tmp.name] = tmp
-
-        return cls(final, name)
 
     def write(self, wt):
         if self.name is not None:
@@ -266,12 +257,6 @@ class TAG_Compound(BaseTag, dict):
 
 
 class TAG_Int_Array(BaseTag):
-    @classmethod
-    def read(cls, rd, has_name=True):
-        name = _read_utf8(rd) if has_name else None
-        length, = rd('i')
-        return cls(rd('%si' % length), name)
-
     def write(self, wt):
         if self.name is not None:
             wt('b', 11)
