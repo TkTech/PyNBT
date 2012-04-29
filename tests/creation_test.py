@@ -6,20 +6,6 @@ class CreationTest(unittest.TestCase):
     def setUp(self):
         self.nbt = NBTFile()
 
-    def test_string_key(self):
-        """
-        Ensure key names are strings.
-        """
-        with self.assertRaises(TypeError):
-            self.nbt[4] = TAG_String('four')
-
-    def test_is_tag(self):
-        """
-        Ensure compound values are TAG_* subclasses.
-        """
-        with self.assertRaises(TypeError):
-            self.nbt['4'] = 4
-
     def test_save(self):
         n = self.nbt
         n['byte'] = TAG_Byte(0)
@@ -28,6 +14,8 @@ class CreationTest(unittest.TestCase):
         n['float'] = TAG_Float(3.)
         n['double'] = TAG_Double(4.)
         n['string'] = TAG_String('Testing')
+        n['int_array'] = TAG_Int_Array([45, 5, 6])
+        n['byte_array'] = TAG_Byte_Array('four')
         self.nbt.save('__test__.nbt')
 
 if __name__ == '__main__':

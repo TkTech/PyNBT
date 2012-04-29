@@ -34,7 +34,6 @@ class BaseTag(object):
         # Handle TAG_Compound as a complex type.
         if cls is TAG_Compound:
             final = {}
-
             while True:
                 tag, = rd('b')
                 # EndTag
@@ -64,23 +63,41 @@ class BaseTag(object):
         # Handle TAG_Int_Array as a complex type.
         elif cls is TAG_Int_Array:
             length, = rd('i')
-            return cls(rd('%si' % length)[0], name)
-
-        return cls(rd(cls.STRUCT_FMT)[0], name)
+            return cls(rd('%si' % length), name)
+        else:
+            return cls(rd(cls.STRUCT_FMT)[0], name)
 
     def write(self, wt):
         """
         Write the tag to disk using the writer `wt`.
         If the tag's `name` is None, no name will be written.
         """
-        if not hasattr(self, 'STRUCT_FMT'):
-            raise NotImplementedError()
-
         if self.name is not None:
-            wt('b', _tags.index(self.__class__))
+            if isinstance(self, NBTFile):
+                wt('b', 0x0A)
+            else:
+                wt('b', _tags.index(self.__class__))
             _write_utf8(wt, self.name)
 
-        wt(self.STRUCT_FMT, self.value)
+        if isinstance(self, TAG_List):
+            wt('bi', self._type, len(self.value))
+            for item in self.value:
+                item.write(wt)
+        elif isinstance(self, TAG_Compound):
+            for v in self.value.itervalues():
+                v.write(wt)
+            wt('b', 0)
+        elif isinstance(self, TAG_String):
+            l = len(self.value)
+            wt('h%ss' % l, l, self.value)
+        elif isinstance(self, TAG_Int_Array):
+            l = len(self.value)
+            wt('i%si' % l, l, *self.value)
+        elif isinstance(self, TAG_Byte_Array):
+            l = len(self.value)
+            wt('i%ss' % l, l, self.value)
+        else:
+            wt(self.STRUCT_FMT, self.value)
 
     def pretty(self, indent=0, indent_str='  '):
         """
@@ -127,13 +144,6 @@ class TAG_Double(BaseTag):
 
 
 class TAG_Byte_Array(BaseTag):
-    def write(self, wt):
-        if self.name is not None:
-            wt('b', 0x07)
-            _write_utf8(wt, self.name)
-
-        wt('i%ss' % len(self.value), len(self.value), self.value)
-
     def pretty(self, indent=0, indent_str='  '):
         return '%sTAG_Byte_Array(%r): [%d bytes]' % (
             indent_str * indent,
@@ -143,11 +153,7 @@ class TAG_Byte_Array(BaseTag):
 
 
 class TAG_String(BaseTag):
-    def write(self, wt):
-        if self.name is not None:
-            wt('b', 0x08)
-            _write_utf8(wt, self.name)
-        wt('h%ss' % len(self.value), len(self.value), self.value)
+    pass
 
 
 class TAG_List(BaseTag):
@@ -161,15 +167,6 @@ class TAG_List(BaseTag):
             self._type = tag_type
         else:
             self._type = _tags.index(tag_type)
-
-    def write(self, wt):
-        if self.name is not None:
-            wt('b', 0x09)
-            _write_utf8(wt, self.name)
-
-        wt('bi', self._type, len(self.value))
-        for item in self.value:
-            item.write(wt)
 
     def pretty(self, indent=0, indent_str='  '):
         t = []
@@ -190,17 +187,6 @@ class TAG_Compound(BaseTag, dict):
         self.name = name
         self.value = self
         self.update(value)
-
-    def write(self, wt):
-        if self.name is not None:
-            wt('b', 0x0A)
-            _write_utf8(wt, self.name)
-
-        for v in self.value.itervalues():
-            v.write(wt)
-
-        # EndTag
-        wt('b', 0)
 
     def pretty(self, indent=0, indent_str='  '):
         t = []
@@ -244,15 +230,8 @@ class TAG_Compound(BaseTag, dict):
 
 
 class TAG_Int_Array(BaseTag):
-    def write(self, wt):
-        if self.name is not None:
-            wt('b', 0x0B)
-            _write_utf8(wt, self.name)
-
-        wt('i%si' % len(self.value), len(self.value), self.value)
-
     def pretty(self, indent=0, indent_str='  '):
-        return '%sTAG_Int_Array(%r): [%d bytes]' % (
+        return '%sTAG_Int_Array(%r): [%d integers]' % (
             indent_str * indent,
             self.name,
             len(self.value)
