@@ -9,14 +9,13 @@ import struct
 
 
 def _read_utf8(rd):
-    """Reads in a length-prefixed UTF8 string."""
     length, = rd('h')
     return rd('%ds' % length)[0]
 
 
 def _write_utf8(wt, value):
-    """Writes a length-prefixed UTF8 string."""
-    wt('h%ss' % len(value), len(value), value)
+    l = len(value)
+    wt('h%ss' % l, l, value)
 
 
 class BaseTag(object):
