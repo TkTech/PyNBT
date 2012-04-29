@@ -15,36 +15,21 @@ except ImportError:
 from .helpers import is_pocket
 
 
+def _read_utf8(rd):
+    """Reads in a length-prefixed UTF8 string."""
+    length, = rd('h')
+    return rd('%ds' % length)[0]
+
+
+def _write_utf8(wt, value):
+    """Writes a length-prefixed UTF8 string."""
+    wt('h%ss' % len(value), len(value), value)
+
+
 class BaseTag(object):
-    """
-    Implements methods common to all NBT tags.
-    """
     def __init__(self, value, name=None):
-        self._name = name
-        self._value = value
-
-    @property
-    def value(self):
-        return self._value
-
-    @property
-    def name(self):
-        return self._name
-
-    @staticmethod
-    def read_utf8(rd):
-        """
-        Reads in a length-prefixed UTF8 string.
-        """
-        length, = rd('h')
-        return rd('%ds' % length)[0]
-
-    @staticmethod
-    def write_utf8(wt, value):
-        """
-        Writes a length-prefixed UTF8 string.
-        """
-        wt('h%ss' % len(value), len(value), value)
+        self.name = name
+        self.value = value
 
     @classmethod
     def read(cls, rd, has_name=True):
@@ -55,7 +40,7 @@ class BaseTag(object):
         if not hasattr(cls, 'STRUCT_FMT'):
             raise NotImplementedError()
 
-        name = BaseTag.read_utf8(rd) if has_name else None
+        name = _read_utf8(rd) if has_name else None
         value, = rd(cls.STRUCT_FMT)
 
         return cls(value, name)
@@ -70,7 +55,7 @@ class BaseTag(object):
 
         if self.name is not None:
             wt('b', _tags.index(self.__class__))
-            BaseTag.write_utf8(wt, self.name)
+            _write_utf8(wt, self.name)
 
         wt(self.STRUCT_FMT, self.value)
 
@@ -121,14 +106,14 @@ class TAG_Double(BaseTag):
 class TAG_Byte_Array(BaseTag):
     @classmethod
     def read(cls, rd, has_name=True):
-        name = BaseTag.read_utf8(rd) if has_name else None
+        name = _read_utf8(rd) if has_name else None
         length, = rd('i')
         return cls(rd('%ss' % length)[0], name)
 
     def write(self, wt):
         if self.name is not None:
             wt('b', 7)
-            BaseTag.write_utf8(wt, self.name)
+            _write_utf8(wt, self.name)
 
         wt('i%ss' % len(self.value), len(self.value), self.value)
 
@@ -143,14 +128,14 @@ class TAG_Byte_Array(BaseTag):
 class TAG_String(BaseTag):
     @classmethod
     def read(cls, rd, has_name=True):
-        name = BaseTag.read_utf8(rd) if has_name else None
-        value = BaseTag.read_utf8(rd)
+        name = _read_utf8(rd) if has_name else None
+        value = _read_utf8(rd)
         return cls(value, name)
 
     def write(self, wt):
         if self.name is not None:
             wt('b', 8)
-            BaseTag.write_utf8(wt, self.name)
+            _write_utf8(wt, self.name)
         wt('h%ss' % len(self.value), len(self.value), self.value)
 
 
@@ -168,7 +153,7 @@ class TAG_List(BaseTag):
 
     @classmethod
     def read(cls, rd, has_name=True):
-        name = BaseTag.read_utf8(rd) if has_name else None
+        name = _read_utf8(rd) if has_name else None
         tag_type, length = rd('bi')
         real_type = _tags[tag_type]
         return TAG_List(
@@ -180,7 +165,7 @@ class TAG_List(BaseTag):
     def write(self, wt):
         if self.name is not None:
             wt('b', 9)
-            BaseTag.write_utf8(wt, self.name)
+            _write_utf8(wt, self.name)
 
         wt('bi', self._type, len(self.value))
         for item in self.value:
@@ -202,20 +187,13 @@ class TAG_List(BaseTag):
 
 class TAG_Compound(BaseTag, dict):
     def __init__(self, value, name=None):
-        self._name = name
-        self._value = self
+        self.name = name
+        self.value = self
         self.update(value)
-
-    @property
-    def value(self):
-        """
-        Mimic having a value property to keep the TAG_* interface.
-        """
-        return self
 
     @classmethod
     def read(cls, rd, has_name=True):
-        name = BaseTag.read_utf8(rd) if has_name else None
+        name = _read_utf8(rd) if has_name else None
         final = {}
 
         while True:
@@ -232,7 +210,7 @@ class TAG_Compound(BaseTag, dict):
     def write(self, wt):
         if self.name is not None:
             wt('b', 10)
-            BaseTag.write_utf8(wt, self.name)
+            _write_utf8(wt, self.name)
 
         for v in self.value.itervalues():
             v.write(wt)
@@ -274,7 +252,7 @@ class TAG_Compound(BaseTag, dict):
             raise TypeError('Value must be an NBT tag!')
 
         if value.name is None:
-            value._name = key
+            value.name = key
 
         super(TAG_Compound, self).__setitem__(key, value)
 
@@ -291,20 +269,20 @@ class TAG_Compound(BaseTag, dict):
                 raise TypeError('Value must be an NBT tag!')
 
             if item.name is None:
-                item._name = key
+                item.name = key
 
 
 class TAG_Int_Array(BaseTag):
     @classmethod
     def read(cls, rd, has_name=True):
-        name = BaseTag.read_utf8(rd) if has_name else None
+        name = _read_utf8(rd) if has_name else None
         length, = rd('i')
         return cls(rd('%si' % length), name)
 
     def write(self, wt):
         if self.name is not None:
             wt('b', 11)
-            BaseTag.write_utf8(wt, self.name)
+            _write_utf8(wt, self.name)
 
         wt('i%si' % len(self.value), len(self.value), self.value)
 
@@ -371,7 +349,7 @@ class NBTFile(TAG_Compound):
         # Discard the compound tag.
         read('b')
         tmp = TAG_Compound.read(read)
-        super(NBTFile, self).__init__(tmp, tmp._name)
+        super(NBTFile, self).__init__(tmp, tmp.name)
 
         if compressed:
             src.close()
