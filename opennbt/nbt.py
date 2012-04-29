@@ -229,12 +229,6 @@ class TAG_Compound(BaseTag, dict):
         it's being assigned to. This results in cleaner code, as the name
         does not need to be specified twice.
         """
-        if not isinstance(key, basestring):
-            raise TypeError('NBT tag names must be a string!')
-
-        if not isinstance(value, BaseTag):
-            raise TypeError('Value must be an NBT tag!')
-
         if value.name is None:
             value.name = key
 
@@ -246,12 +240,6 @@ class TAG_Compound(BaseTag, dict):
         """
         super(TAG_Compound, self).update(*args, **kwargs)
         for key, item in self.items():
-            if not isinstance(key, basestring):
-                raise TypeError('NBT tag names must be a string!')
-
-            if not isinstance(item, BaseTag):
-                raise TypeError('Value must be an NBT tag!')
-
             if item.name is None:
                 item.name = key
 
