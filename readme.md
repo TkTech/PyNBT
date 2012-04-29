@@ -1,7 +1,7 @@
 # OpenNBT
 
 OpenNBT is a tiny, liberally licenced (MIT) NBT library.
-It supports reading and writing compressed, uncompressed, big endian, little endian, or pocket edition (v2) NBT files transparently. It also includes helpers for region files and pocket detection.
+It supports reading and writing compressed, uncompressed, big endian or little endian NBT files. It also includes helpers for region files and pocket detection.
 
 ## Scripts
 
@@ -10,7 +10,7 @@ The OpenNBT package installs two scripts, `debug-nbt` and `debug-region`. These 
 Example:
 
 ```
-debug-nbt level.dat
+$ debug-nbt level.dat
 TAG_Compound(''): 1 entries
 {
   TAG_Compound('Data'): 18 entries
@@ -21,13 +21,11 @@ TAG_Compound(''): 1 entries
 ```
 
 ## Using the Library
-Using the library in your own programs is simple. By default, OpenNBT will try to save opened NBT files in the same format they were loaded from, however this behaviour is
-easily changed.
+Using the library in your own programs is simple and is capable of reading, modifying, and saving NBT files.
 
 ### Writing
 
-When writing NBT files with OpenNBT, every tag should be treated as if it was immutable. This is to simplify future changes to both the library and the format.
-Developer wise, building NBT files is less convienient, but very explicit. This is done because of the differences in basic types between NBT and python.
+When writing NBT files with OpenNBT, every tag should be treated as if it was immutable. This is to simplify future changes to both the library and the format. In other words, instead of modifying the value of a tag, replace it with a new tag.
 
 **NOTE**: Beginning with version 1.1.0, names are optional for TAG_*'s that are added to a TAG_Compound, as they will be given the same name as their key. If you do
 specify a name, it will be used instead. This breaks compatibility with old code, as the position of the `name` and `value` parameter have now swapped.
@@ -35,7 +33,7 @@ specify a name, it will be used instead. This breaks compatibility with old code
 ```python
 from opennbt import NBTFile, TAG_Long, TAG_List, TAG_String
 
-structure = {
+value = {
     'long_test': TAG_Long(104005),
     'list_test': TAG_List(TAG_String, [
         TAG_String('Timmy'),
@@ -44,14 +42,13 @@ structure = {
     ])
 }
 
-nbt = NBTFile(value=structure)
+nbt = NBTFile(value=value)
 nbt.save('out.nbt')
 ```
 
 ### Reading
 
-Reading is simple, and will accept any file-like object providing `read()` or a path to a file. If a path is provided, OpenNBT may open it multiple times to figure out the format. If you provide a file-like object, you need to specify the details yourself.
-
+Reading is simple, and will accept any file-like object providing `read()` or a path to a file.
 Simply pretty-printing the file created from the example under writing:
 
 ```python
@@ -76,21 +73,27 @@ TAG_Compound(''): 2 entries
 }
 ```
 
-Every tag exposes a minimum of two fields, `.name` and `.value`. Every type's value maps to a plain Python type, such as a `dict()` for `TAG_Compound` and a list for `TAG_List`. Every tag
+Every tag exposes a minimum of two fields, `.name` and `.value`. Every tag's value maps to a plain Python type, such as a `dict()` for `TAG_Compound` and a `list()` for `TAG_List`. Every tag
 also provides complete `__repr__` methods for printing. This makes traversal very simple and familiar to existing Python developers.
 
 ```python
 nbt = NBTFile('out.nbt')
-for name, tag in nbt.value.items():
+# Iterate over every TAG in the root compound as you would any other dict
+for name, tag in nbt.items():
     print name, tag
 
-if 'list_test' in nbt.value:
-    for tag in nbt.value['list_test'].value:
-        print tag
+# Print every tag in a list
+for tag in nbt['list_test']:
+    print tag
 ```
 
 ## Changelog
 These changelogs are summaries only and not comprehensive. See the commit history between tags for full changes.
+
+### v1.2.0
+ - Internal code cleanup. Breaks compatibility with pocket loading and saving (to be reimplemented as helpers).
+ - Slight speed improvements.
+ - TAG_List can now be treated as a plain python list (`.value` points to `self`)
 
 ### v1.1.0
  - Breaks compatibility with older code, but allows much more convienient creation of `TAG_Compound`. `name` and `value` have in most cases swapped spots.
