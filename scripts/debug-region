@@ -3,7 +3,7 @@
 import sys
 import getopt
 
-from opennbt import RegionFile
+from pynbt import RegionFile
 
 
 def usage(path):

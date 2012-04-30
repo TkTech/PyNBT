@@ -7,7 +7,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-from opennbt import NBTFile
+from pynbt import NBTFile
 
 # bigtest.nbt
 BIG_TEST = array.array('B', [
@@ -63,7 +63,7 @@ class BigTest(unittest.TestCase):
 
     def test_parse(self):
         """
-        Test to ensure OpenNBT can parse the defacto-test file, "bigtest.nbt".
+        Test to ensure PyNBT can parse the defacto-test file, "bigtest.nbt".
         """
         nbt = NBTFile(self.io)
         # Ensure every base tag was parsed.

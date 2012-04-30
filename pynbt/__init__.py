@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from opennbt.nbt import (
+from pynbt.nbt import (
     NBTFile,
     TAG_Byte,
     TAG_Short,
@@ -13,5 +13,5 @@ from opennbt.nbt import (
     TAG_Compound,
     TAG_Int_Array
 )
-from opennbt.region import RegionFile
-from opennbt.helpers import is_pocket
+from pynbt.region import RegionFile
+from pynbt.helpers import is_pocket

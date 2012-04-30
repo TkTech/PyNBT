@@ -3,7 +3,7 @@
 import sys
 import getopt
 
-from opennbt import NBTFile
+from pynbt import NBTFile
 
 
 def usage(path):

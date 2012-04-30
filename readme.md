@@ -1,11 +1,11 @@
-# OpenNBT
+# PyNBT
 
-OpenNBT is a tiny, liberally licenced (MIT) NBT library.
+PyNBT is a tiny, liberally licenced (MIT) NBT library.
 It supports reading and writing compressed, uncompressed, big endian or little endian NBT files. It also includes helpers for region files and pocket detection.
 
 ## Scripts
 
-The OpenNBT package installs two scripts, `debug-nbt` and `debug-region`. These scripts can be used to pretty-print the NBT contents of plain NBT files and region files.
+The PyNBT package installs two scripts, `debug-nbt` and `debug-region`. These scripts can be used to pretty-print the NBT contents of plain NBT files and region files.
 
 Example:
 
@@ -25,13 +25,13 @@ Using the library in your own programs is simple and is capable of reading, modi
 
 ### Writing
 
-When writing NBT files with OpenNBT, every tag should be treated as if it was immutable. This is to simplify future changes to both the library and the format. In other words, instead of modifying the value of a tag, replace it with a new tag.
+When writing NBT files with PyNBT, every tag should be treated as if it was immutable. This is to simplify future changes to both the library and the format. In other words, instead of modifying the value of a tag, replace it with a new tag.
 
 **NOTE**: Beginning with version 1.1.0, names are optional for TAG_*'s that are added to a TAG_Compound, as they will be given the same name as their key. If you do
 specify a name, it will be used instead. This breaks compatibility with old code, as the position of the `name` and `value` parameter have now swapped.
 
 ```python
-from opennbt import NBTFile, TAG_Long, TAG_List, TAG_String
+from pynbt import NBTFile, TAG_Long, TAG_List, TAG_String
 
 value = {
     'long_test': TAG_Long(104005),
@@ -52,7 +52,7 @@ Reading is simple, and will accept any file-like object providing `read()` or a 
 Simply pretty-printing the file created from the example under writing:
 
 ```python
-from opennbt import NBTFile
+from pynbt import NBTFile
 
 nbt = NBTFile('out.nbt')
 print(nbt.pretty())

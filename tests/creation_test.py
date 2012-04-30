@@ -1,5 +1,5 @@
 import unittest
-from opennbt import *
+from pynbt import *
 
 
 class CreationTest(unittest.TestCase):

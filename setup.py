@@ -6,14 +6,14 @@ except ImportError:
     from distutils.core import setup
 
 setup(
-    name='OpenNBT',
+    name='PyNBT',
     version='1.2.0',
     description='Tiny, liberally-licensed NBT library. NBT is the datafile format used in Minecraft.',
     author='Tyler Kennedy',
     author_email='tk@tkte.ch',
-    url='https://github.com/TkTech/OpenNBT',
+    url='https://github.com/TkTech/PyNBT',
     packages=[
-        'opennbt'
+        'pynbt'
     ],
     scripts=[
         'scripts/debug-nbt',
