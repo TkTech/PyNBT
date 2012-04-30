@@ -182,6 +182,13 @@ class TAG_List(BaseTag, list):
         t.append('%s}' % (indent_str * indent))
         return '\n'.join(t)
 
+    def __repr__(self):
+        return '%s(%r entries, %r)' % (
+            self.__class__.__name__,
+            len(self),
+            self.name
+        )
+
 
 class TAG_Compound(BaseTag, dict):
     def __init__(self, value, name=None):
