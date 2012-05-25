@@ -81,6 +81,8 @@ class BaseTag(object):
         if isinstance(self, TAG_List):
             wt('bi', self._type, len(self.value))
             for item in self.value:
+                if not isinstance(item, _tags[self._type]):
+                    item = _tags[self._type](item)
                 item.write(wt)
         elif isinstance(self, TAG_Compound):
             for v in self.value.itervalues():

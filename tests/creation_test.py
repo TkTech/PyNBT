@@ -19,6 +19,19 @@ class CreationTest(unittest.TestCase):
         n['list'] = TAG_List(TAG_Int, [
             TAG_Int(4)
         ])
+        n['autolist_int'] = TAG_List(TAG_Int, [
+            5,
+            6,
+            7,
+            30240,
+            -340
+        ])
+        n['autolist_compound'] = TAG_List(TAG_Compound, [
+            {
+                'name': TAG_String('ABC'),
+                'health': TAG_Double(3.5)
+            }
+        ])
         self.nbt.save('__test__.nbt')
 
 if __name__ == '__main__':
