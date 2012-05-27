@@ -12,7 +12,6 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
-from datetime import date
 
 from .nbt import NBTFile
 
