@@ -36,9 +36,9 @@ from pynbt import NBTFile, TAG_Long, TAG_List, TAG_String
 value = {
     'long_test': TAG_Long(104005),
     'list_test': TAG_List(TAG_String, [
-        TAG_String('Timmy'),
-        TAG_String('Billy'),
-        TAG_String('Sally')
+        'Timmy',
+        'Billy',
+        'Sally'
     ])
 }
 
@@ -89,6 +89,10 @@ for tag in nbt['list_test']:
 
 ## Changelog
 These changelogs are summaries only and not comprehensive. See the commit history between tags for full changes.
+
+### v1.2.1
+ - TAG_List's values no longer need to be ``TAG_*`` objects. They will be converted when the tag is saved. This allows much
+ easier lists of native types.
 
 ### v1.2.0
  - Internal code cleanup. Breaks compatibility with pocket loading and saving (to be reimplemented as helpers).
