@@ -8,7 +8,7 @@ except ImportError:
 setup(
     name='PyNBT',
     version='1.2.1',
-    description='Tiny, liberally-licensed NBT library. NBT is the datafile format used in Minecraft.',
+    description='Tiny, liberally-licensed NBT library (Minecraft).',
     author='Tyler Kennedy',
     author_email='tk@tkte.ch',
     url='https://github.com/TkTech/PyNBT',
