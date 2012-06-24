@@ -13,5 +13,3 @@ from pynbt.nbt import (
     TAG_Compound,
     TAG_Int_Array
 )
-from pynbt.region import RegionFile
-from pynbt.helpers import is_pocket
