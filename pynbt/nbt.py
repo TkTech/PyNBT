@@ -158,7 +158,7 @@ class BaseTag(object):
         return repr(self)
 
     def __unicode__(self):
-        return unicode(repr(self))
+        return unicode(repr(self), 'utf-8')
 
 
 class TAG_Byte(BaseTag):
