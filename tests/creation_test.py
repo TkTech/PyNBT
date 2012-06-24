@@ -4,7 +4,7 @@ from pynbt import *
 
 class CreationTest(unittest.TestCase):
     def setUp(self):
-        self.nbt = NBTFile()
+        self.nbt = NBTFile(name='')
 
     def test_save(self):
         n = self.nbt
@@ -32,7 +32,8 @@ class CreationTest(unittest.TestCase):
                 'health': TAG_Double(3.5)
             }
         ])
-        self.nbt.save('__test__.nbt')
+        with open('__test__.nbt', 'wb') as io:
+            self.nbt.save(io, compression=NBTFile.Compression.GZIP)
 
 if __name__ == '__main__':
     unittest.main()

@@ -328,6 +328,9 @@ class NBTFile(TAG_Compound):
         else:
             raise ValueError('Unrecognized compression scheme.')
 
+        # The pocket edition uses little-endian NBT files, but annoyingly
+        # without any kind of header we can't determine that ourselves,
+        # not even a magic number we could flip.
         if little_endian:
             read = lambda fmt, size: unpack('<' + fmt, final_io.read(size))
         else:
@@ -340,23 +343,18 @@ class NBTFile(TAG_Compound):
         tmp = TAG_Compound.read(read)
         super(NBTFile, self).__init__(tmp, tmp.name)
 
-    def save(self, io, compressed=True, little_endian=False):
+    def save(self, io, compression=None, little_endian=False):
         """
         Saves the `NBTFile()` to `io` which is either a path or a file-like
         object providing `write()`.
         """
-        f = open(io, 'wb') if isinstance(io, basestring) else io
-        g = gzip.GzipFile(fileobj=f, mode='wb') if compressed else f
+        if compression is None or compression == NBTFile.Compression.NONE:
+            final_io = io
+        elif compression == NBTFile.Compression.GZIP:
+            final_io = gzip.GzipFile(fileobj=io, mode='wb')
 
         if little_endian:
-            w = lambda fmt, *args: g.write(pack('<' + fmt, *args))
+            write = lambda fmt, *args: final_io.write(pack('<' + fmt, *args))
         else:
-            w = lambda fmt, *args: g.write(pack('>' + fmt, *args))
-
-        self.write(w)
-
-        # Close io only if we're the one who opened it.
-        if isinstance(io, basestring):
-            if compressed:
-                g.close()
-            f.close()
+            write = lambda fmt, *args: final_io.write(pack('>' + fmt, *args))
+        self.write(write)
