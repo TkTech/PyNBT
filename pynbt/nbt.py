@@ -13,11 +13,6 @@ import gzip
 from struct import unpack, pack
 
 
-def _write_utf8(wt, value):
-    l = len(value)
-    wt('h%ss' % l, l, value)
-
-
 class BaseTag(object):
     def __init__(self, value, name=None):
         self.name = name
@@ -31,6 +26,11 @@ class BaseTag(object):
             '{}s'.format(name_length),
             name_length
         )[0].decode('utf-8')
+
+    @staticmethod
+    def _write_utf8(write, value):
+        """Writes a length-prefixed UTF-8 string."""
+        write('h{}s'.format(len(value)), len(value), value)
 
     @classmethod
     def read(cls, read, has_name=True):
@@ -98,39 +98,49 @@ class BaseTag(object):
             # A single double-precision floating point value.
             return cls(read('d', 8)[0], name=name)
 
-    def write(self, wt):
-        """
-        Write the tag to disk using the writer `wt`.
-        If the tag's `name` is None, no name will be written.
-        """
+    def write(self, write):
+        # Only write the name TAG_String if our name is not `None`.
+        # If you want a blank name, use ''.
         if self.name is not None:
             if isinstance(self, NBTFile):
-                wt('b', 0x0A)
+                write('b', 0x0A)
             else:
-                wt('b', _tags.index(self.__class__))
-            _write_utf8(wt, self.name)
+                write('b', _tags.index(self.__class__))
+            self._write_utf8(write, self.name)
 
         if isinstance(self, TAG_List):
-            wt('bi', self._type, len(self.value))
+            write('bi', self._type, len(self.value))
             for item in self.value:
+                # If our list item isn't of type self._type, convert
+                # it before writing.
                 if not isinstance(item, _tags[self._type]):
                     item = _tags[self._type](item)
-                item.write(wt)
+                item.write(write)
         elif isinstance(self, TAG_Compound):
-            for v in self.value.itervalues():
-                v.write(wt)
-            wt('b', 0)
+            for v in self.value.values():
+                v.write(write)
+            # A tag of type 0 (TAg_End) terminates a TAG_Compound.
+            write('b', 0)
         elif isinstance(self, TAG_String):
-            l = len(self.value)
-            wt('h%ss' % l, l, self.value)
+            self._write_utf8(write, self.value)
         elif isinstance(self, TAG_Int_Array):
             l = len(self.value)
-            wt('i%si' % l, l, *self.value)
+            write('i{}i'.format(l), l, *self.value)
         elif isinstance(self, TAG_Byte_Array):
             l = len(self.value)
-            wt('i%ss' % l, l, self.value)
-        else:
-            wt(self.STRUCT_FMT, self.value)
+            write('i{}b'.format(l), l, *self.value)
+        elif isinstance(self, TAG_Byte):
+            write('b', self.value)
+        elif isinstance(self, TAG_Short):
+            write('h', self.value)
+        elif isinstance(self, TAG_Int):
+            write('i', self.value)
+        elif isinstance(self, TAG_Long):
+            write('q', self.value)
+        elif isinstance(self, TAG_Float):
+            write('f', self.value)
+        elif isinstance(self, TAG_Double):
+            write('d', self.value)
 
     def pretty(self, indent=0, indent_str='  '):
         """
