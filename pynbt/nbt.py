@@ -105,7 +105,7 @@ class BaseTag(object):
                 write('b', _tags.index(self.__class__))
             self._write_utf8(write, self.name)
         if isinstance(self, TAG_List):
-            write('bi', self._type, len(self.value))
+            write('bi', _tags.index(self.type_), len(self.value))
             for item in self.value:
                 # If our list item isn't of type self._type, convert
                 # it before writing.
