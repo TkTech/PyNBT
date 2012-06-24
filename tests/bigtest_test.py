@@ -65,7 +65,7 @@ class BigTest(unittest.TestCase):
         """
         Test to ensure PyNBT can parse the defacto-test file, "bigtest.nbt".
         """
-        nbt = NBTFile(self.io)
+        nbt = NBTFile(self.io, compression=NBTFile.Compression.GZIP)
         # Ensure every base tag was parsed.
         self.assertTrue(len(nbt) == 11)
 
