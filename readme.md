@@ -96,7 +96,7 @@ the commit history between tags for full changes.
 ### v1.3.0
 
 - Internal cleanups in ``nbt.py`` to ease some C work.
-- NBTFile.__init__() and NBTFile.save()'s arguments have changed.
+- ``NBTFile.__init__()`` and ``NBTFile.save()``'s arguments have changed.
   For most cases changing ``compressed=True`` to ``NBTFIle.Compression.GZIP``
   will suffice.
 - ``NBTFile.__init__()`` and ``NBTFile.save()`` no longer accept paths,
