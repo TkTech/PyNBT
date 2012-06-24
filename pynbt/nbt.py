@@ -287,6 +287,9 @@ class TAG_Int_Array(BaseTag):
             len(self.value)
         )
 
+# The TAG_* types have the convienient property of being continuous.
+# The code is written in such a way that if this were to no longer be
+# true in the future, _tags can simply be replaced with a dict().
 _tags = (
     None,
     TAG_Byte,
@@ -305,6 +308,10 @@ _tags = (
 
 class NBTFile(TAG_Compound):
     class Compression(object):
+        """
+        Defines compression schemes to be used for loading and saving
+        NBT files.
+        """
         # NONE is simply for the sake of completeness.
         NONE = 10
         # Use Gzip compression when reading or writing.
@@ -313,8 +320,15 @@ class NBTFile(TAG_Compound):
     def __init__(self, io=None, name=None, value=None, compression=None,
         little_endian=False):
         """
-        Loads or creates a new NBT file. `io` may be either a file-like object
-        providing `read()`, or a path to a file.
+        Creates a new NBTFile or loads one from any file-like object providing
+        `read()`.
+
+        Construction a new NBTFile() is as simple as:
+        >>> nbt = NBTFile(name='')
+
+        Whereas loading an existing one is most often done:
+        >>> with open('my_file.nbt', rb') as io:
+        ...     nbt = NBTFile(io=io, compression=NBTFile.Compression.GZIP)
         """
         # No file or path given, so we're creating a new NBTFile.
         if io is None:
@@ -345,8 +359,8 @@ class NBTFile(TAG_Compound):
 
     def save(self, io, compression=None, little_endian=False):
         """
-        Saves the `NBTFile()` to `io` which is either a path or a file-like
-        object providing `write()`.
+        Saves the `NBTFile()` to `io`, which can be any file-like object
+        providing `write()`.
         """
         if compression is None or compression == NBTFile.Compression.NONE:
             final_io = io
