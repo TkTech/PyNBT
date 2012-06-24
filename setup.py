@@ -7,17 +7,13 @@ except ImportError:
 
 setup(
     name='PyNBT',
-    version='1.3.0',
+    version='1.3.2',
     description='Tiny, liberally-licensed NBT library (Minecraft).',
     author='Tyler Kennedy',
     author_email='tk@tkte.ch',
     url='https://github.com/TkTech/PyNBT',
     packages=[
         'pynbt'
-    ],
-    scripts=[
-        'scripts/debug-nbt',
-        'scripts/debug-region'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

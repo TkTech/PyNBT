@@ -3,23 +3,6 @@
 PyNBT is a tiny, liberally licenced (MIT) NBT library.
 It supports reading and writing compressed, uncompressed, big endian or little endian NBT files. It also includes helpers for region files and pocket detection.
 
-## Scripts
-
-The PyNBT package installs two scripts, `debug-nbt` and `debug-region`. These scripts can be used to pretty-print the NBT contents of plain NBT files and region files.
-
-Example:
-
-```
-$ debug-nbt level.dat
-TAG_Compound(''): 1 entries
-{
-  TAG_Compound('Data'): 18 entries
-  {
-  ...
-  }
-}
-```
-
 ## Using the Library
 Using the library in your own programs is simple and is capable of reading, modifying, and saving NBT files.
 
