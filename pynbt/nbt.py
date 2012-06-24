@@ -10,12 +10,7 @@ created by Markus Petersson.
 __authors__ = ('Tyler Kennedy <tk@tkte.ch>', )
 
 import gzip
-import struct
-
-
-def _read_utf8(rd):
-    length, = rd('h')
-    return rd('%ds' % length)[0]
+from struct import unpack, pack
 
 
 def _write_utf8(wt, value):
@@ -28,48 +23,74 @@ class BaseTag(object):
         self.name = name
         self.value = value
 
+    @staticmethod
+    def _read_utf8(read):
+        """Reads a length-prefixed UTF-8 string."""
+        name_length = read('H', 2)[0]
+        return read(
+            '{}s'.format(name_length),
+            name_length
+        )[0].decode('utf-8')
+
     @classmethod
-    def read(cls, rd, has_name=True):
+    def read(cls, read, has_name=True):
         """
         Read the tag in using the reader `rd`.
         If `has_name` is `False`, skip reading the tag name.
         """
-        name = _read_utf8(rd) if has_name else None
-        # Handle TAG_Compound as a complex type.
+        name = cls._read_utf8(read) if has_name else None
+
         if cls is TAG_Compound:
+            # A TAG_Compound is almost identical to Python's native dict()
+            # object, or a Java HashMap.
             final = {}
             while True:
-                tag, = rd('b')
-                # EndTag
+                # Find the type of each tag in a compound in turn.
+                tag = read('b', 1)[0]
                 if tag == 0:
+                    # A tag of 0 means we've reached TAG_End, used to terminate
+                    # a TAG_Compound.
                     break
-
-                tmp = _tags[tag].read(rd)
+                # We read in each tag in turn, using its name as the key in
+                # the dict (Since a compound cannot have repeating names,
+                # this works fine).
+                tmp = _tags[tag].read(read)
                 final[tmp.name] = tmp
-            return cls(final, name)
-        # Handle TAG_List as a complex type.
+            return cls(final, name=name)
         elif cls is TAG_List:
-            tag_type, length = rd('bi')
-            real_type = _tags[tag_type]
+            # A TAG_List is a very simple homogeneous array, similar to
+            # Python's native list() object, but restricted to a single type.
+            tag_type, length = read('bi', 5)
+            tag_read = _tags[tag_type].read
             return cls(
                 tag_type,
-                [real_type.read(rd, has_name=False) for x in range(0, length)],
+                [tag_read(read, has_name=False) for x in range(0, length)],
                 name
             )
-        # Handle TAG_String as a complex type.
         elif cls is TAG_String:
-            value = _read_utf8(rd)
+            # A simple length-prefixed UTF-8 string.
+            value = cls._read_utf8(read)
             return cls(value, name)
-        # Handle TAG_Byte_Array as a complex type.
         elif cls is TAG_Byte_Array:
-            length, = rd('i')
-            return cls(rd('%ss' % length)[0], name)
-        # Handle TAG_Int_Array as a complex type.
+            # A simple array of (signed) bytes.
+            length = read('i', 4)[0]
+            return cls(read('{}b'.format(length), length), name)
         elif cls is TAG_Int_Array:
-            length, = rd('i')
-            return cls(rd('%si' % length), name)
-        else:
-            return cls(rd(cls.STRUCT_FMT)[0], name)
+            # A simple array of (signed) 4-byte integers.
+            length = read('i', 4)[0]
+            return cls(read('{}i'.format(length), length * 4), name)
+        elif cls is TAG_Byte:
+            return cls(read('b', 1)[0], name=name)
+        elif cls is TAG_Short:
+            return cls(read('h', 2)[0], name=name)
+        elif cls is TAG_Int:
+            return cls(read('i', 4)[0], name=name)
+        elif cls is TAG_Long:
+            return cls(read('q', 8)[0], name=name)
+        elif cls is TAG_Float:
+            return cls(read('f', 4)[0], name=name)
+        elif cls is TAG_Double:
+            return cls(read('d', 8)[0], name=name)
 
     def write(self, wt):
         """
@@ -126,27 +147,27 @@ class BaseTag(object):
 
 
 class TAG_Byte(BaseTag):
-    STRUCT_FMT = 'b'
+    pass
 
 
 class TAG_Short(BaseTag):
-    STRUCT_FMT = 'h'
+    pass
 
 
 class TAG_Int(BaseTag):
-    STRUCT_FMT = 'i'
+    pass
 
 
 class TAG_Long(BaseTag):
-    STRUCT_FMT = 'q'
+    pass
 
 
 class TAG_Float(BaseTag):
-    STRUCT_FMT = 'f'
+    pass
 
 
 class TAG_Double(BaseTag):
-    STRUCT_FMT = 'd'
+    pass
 
 
 class TAG_Byte_Array(BaseTag):
@@ -267,8 +288,14 @@ _tags = (
 
 
 class NBTFile(TAG_Compound):
-    def __init__(self, io=None, name='', compressed=True, little_endian=False,
-            value=None):
+    class Compression(object):
+        # NONE is simply for the sake of completeness.
+        NONE = 10
+        # Use Gzip compression when reading or writing.
+        GZIP = 20
+
+    def __init__(self, io=None, name=None, value=None, compression=None,
+        little_endian=False):
         """
         Loads or creates a new NBT file. `io` may be either a file-like object
         providing `read()`, or a path to a file.
@@ -278,30 +305,24 @@ class NBTFile(TAG_Compound):
             super(NBTFile, self).__init__(value if value else {}, name)
             return
 
-        f = open(io, 'rb') if isinstance(io, basestring) else io
-        g = gzip.GzipFile(fileobj=f, mode='rb') if compressed else f
+        if compression is None or compression == NBTFile.Compression.NONE:
+            final_io = io
+        elif compression == NBTFile.Compression.GZIP:
+            final_io = gzip.GzipFile(fileobj=io, mode='rb')
+        else:
+            raise ValueError('Unrecognized compression scheme.')
 
         if little_endian:
-            x = lambda f: struct.unpack('<' + f,
-                g.read(struct.calcsize('<' + f)))
+            read = lambda fmt, size: unpack('<' + fmt, final_io.read(size))
         else:
-            x = lambda f: struct.unpack('>' + f,
-                g.read(struct.calcsize('>' + f)))
+            read = lambda fmt, size: unpack('>' + fmt, final_io.read(size))
 
-        # We skip the first byte as it will always be a TAG_Compound
-        # if this is a valid NBTFile.
-        if x('b')[0] != 0x0A:
-            raise IOError('Not a valid NBT file.')
+        # All valid NBT files will begin with 0x0A, which is a TAG_Compound.
+        if read('b', 1)[0] != 0x0A:
+            raise IOError('NBTFile does not begin with 0x0A.')
 
-        tmp = TAG_Compound.read(x)
+        tmp = TAG_Compound.read(read)
         super(NBTFile, self).__init__(tmp, tmp.name)
-
-        # Close io only if we're the one who opened it.
-        if isinstance(io, basestring):
-            # This will not close the underlying fileobj.
-            if compressed:
-                g.close()
-            f.close()
 
     def save(self, io, compressed=True, little_endian=False):
         """
@@ -312,9 +333,9 @@ class NBTFile(TAG_Compound):
         g = gzip.GzipFile(fileobj=f, mode='wb') if compressed else f
 
         if little_endian:
-            w = lambda f, *args: g.write(struct.pack('<' + f, *args))
+            w = lambda fmt, *args: g.write(pack('<' + fmt, *args))
         else:
-            w = lambda f, *args: g.write(struct.pack('>' + f, *args))
+            w = lambda fmt, *args: g.write(pack('>' + fmt, *args))
 
         self.write(w)
 
