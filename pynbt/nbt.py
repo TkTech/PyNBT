@@ -154,6 +154,12 @@ class BaseTag(object):
         return '{0}({1!r}, {2!r})'.format(
             self.__class__.__name__, self.value, self.name)
 
+    def __str__(self):
+        return repr(self)
+
+    def __unicode__(self):
+        return unicode(repr(self))
+
 
 class TAG_Byte(BaseTag):
     pass
