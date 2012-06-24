@@ -65,31 +65,37 @@ class BaseTag(object):
             return cls(
                 tag_type,
                 [tag_read(read, has_name=False) for x in range(0, length)],
-                name
+                name=name
             )
         elif cls is TAG_String:
             # A simple length-prefixed UTF-8 string.
             value = cls._read_utf8(read)
-            return cls(value, name)
+            return cls(value, name=name)
         elif cls is TAG_Byte_Array:
             # A simple array of (signed) bytes.
             length = read('i', 4)[0]
-            return cls(read('{}b'.format(length), length), name)
+            return cls(read('{}b'.format(length), length), name=name)
         elif cls is TAG_Int_Array:
             # A simple array of (signed) 4-byte integers.
             length = read('i', 4)[0]
-            return cls(read('{}i'.format(length), length * 4), name)
+            return cls(read('{}i'.format(length), length * 4), name=name)
         elif cls is TAG_Byte:
+            # A single (signed) byte.
             return cls(read('b', 1)[0], name=name)
         elif cls is TAG_Short:
+            # A single (signed) short.
             return cls(read('h', 2)[0], name=name)
         elif cls is TAG_Int:
+            # A signed (signed) 4-byte int.
             return cls(read('i', 4)[0], name=name)
         elif cls is TAG_Long:
+            # A single (signed) 8-byte long.
             return cls(read('q', 8)[0], name=name)
         elif cls is TAG_Float:
+            # A single single-precision floating point value.
             return cls(read('f', 4)[0], name=name)
         elif cls is TAG_Double:
+            # A single double-precision floating point value.
             return cls(read('d', 8)[0], name=name)
 
     def write(self, wt):
