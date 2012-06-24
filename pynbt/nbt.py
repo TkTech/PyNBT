@@ -6,9 +6,6 @@ created by Markus Petersson.
 
 .. moduleauthor:: Tyler Kennedy <tk@tkte.ch>
 """
-
-__authors__ = ('Tyler Kennedy <tk@tkte.ch>', )
-
 import gzip
 from struct import unpack, pack
 
