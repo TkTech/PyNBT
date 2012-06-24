@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 """
-A tiny library for reading & writing NBT files, used for the game
-'Minecraft' by Markus Petersson.
+Implements reading & writing for the Minecraft Named Binary Tag (NBT) format,
+created by Markus Petersson.
+
+.. moduleauthor:: Tyler Kennedy <tk@tkte.ch>
 """
+
+__authors__ = ('Tyler Kennedy <tk@tkte.ch>', )
+
 import gzip
 import struct
 
