@@ -206,8 +206,9 @@ class TAG_List(BaseTag, list):
         """
         self.name = name
         self.value = self
-        self.extend(value)
         self.type_ = tag_type
+        if value is not None:
+            self.extend(value)
 
     def pretty(self, indent=0, indent_str='  '):
         t = []
@@ -225,10 +226,11 @@ class TAG_List(BaseTag, list):
 
 
 class TAG_Compound(BaseTag, dict):
-    def __init__(self, value, name=None):
+    def __init__(self, value=None, name=None):
         self.name = name
         self.value = self
-        self.update(value)
+        if value is not None:
+            self.update(value)
 
     def pretty(self, indent=0, indent_str='  '):
         t = []
