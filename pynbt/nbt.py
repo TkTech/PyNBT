@@ -63,7 +63,7 @@ class BaseTag(object):
             tag_type, length = read('bi', 5)
             tag_read = _tags[tag_type].read
             return cls(
-                tag_type,
+                _tags[tag_type],
                 [tag_read(read, has_name=False) for x in range(0, length)],
                 name=name
             )
@@ -107,14 +107,13 @@ class BaseTag(object):
             else:
                 write('b', _tags.index(self.__class__))
             self._write_utf8(write, self.name)
-
         if isinstance(self, TAG_List):
             write('bi', self._type, len(self.value))
             for item in self.value:
                 # If our list item isn't of type self._type, convert
                 # it before writing.
-                if not isinstance(item, _tags[self._type]):
-                    item = _tags[self._type](item)
+                if not isinstance(item, self.type_):
+                    item = self.type_(item)
                 item.write(write)
         elif isinstance(self, TAG_Compound):
             for v in self.value.values():
@@ -147,7 +146,7 @@ class BaseTag(object):
         Pretty-print a tag in the same general style as Markus's example
         output.
         """
-        return '%s%s(%r): %r' % (
+        return '{0}{1}({2!r}): {3!r}'.format(
             indent_str * indent,
             self.__class__.__name__,
             self.name,
@@ -155,11 +154,14 @@ class BaseTag(object):
         )
 
     def __repr__(self):
-        return '%s(%r, %r)' % (
-            self.__class__.__name__,
-            self.value,
-            self.name
-        )
+        return '{0}({1!r}, {2!r})'.format(
+            self.__class__.__name__, self.value, self.name)
+
+    def __str__(self):
+        return str(self.value)
+
+    def __unicode__(self):
+        return unicode(self.value)
 
 
 class TAG_Byte(BaseTag):
@@ -188,11 +190,8 @@ class TAG_Double(BaseTag):
 
 class TAG_Byte_Array(BaseTag):
     def pretty(self, indent=0, indent_str='  '):
-        return '%sTAG_Byte_Array(%r): [%d bytes]' % (
-            indent_str * indent,
-            self.name,
-            len(self.value)
-        )
+        return '{0}TAG_Byte_Array({1!r}): [{2} bytes]'.format(
+            indent_str * indent, self.name, len(self.value))
 
 
 class TAG_String(BaseTag):
@@ -200,18 +199,15 @@ class TAG_String(BaseTag):
 
 
 class TAG_List(BaseTag, list):
-    """
-    Keep in mind that a TAG_List is only capable of storing
-    tags of the same type.
-    """
-    def __init__(self, tag_type, value, name=None):
+    def __init__(self, tag_type, value=None, name=None):
+        """
+        Creates a new homogeneous list of `tag_type` items, copying `value`
+        if provided.
+        """
         self.name = name
         self.value = self
         self.extend(value)
-        if isinstance(tag_type, int):
-            self._type = tag_type
-        else:
-            self._type = _tags.index(tag_type)
+        self.type_ = tag_type
 
     def pretty(self, indent=0, indent_str='  '):
         t = []
