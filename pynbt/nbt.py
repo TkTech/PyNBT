@@ -211,23 +211,17 @@ class TAG_List(BaseTag, list):
 
     def pretty(self, indent=0, indent_str='  '):
         t = []
-        t.append('%sTAG_List(%r): %d entries' % (
-            indent_str * indent,
-            self.name,
-            len(self.value)
-        ))
-        t.append('%s{' % (indent_str * indent))
+        t.append('{0}TAG_List({1!r}): {2} entries'.format(
+            indent_str * indent, self.name, len(self.value)))
+        t.append('{0}{{'.format(indent_str * indent))
         for v in self.value:
             t.append(v.pretty(indent + 1))
-        t.append('%s}' % (indent_str * indent))
+        t.append('{0}}}'.format(indent_str * indent))
         return '\n'.join(t)
 
     def __repr__(self):
-        return '%s(%r entries, %r)' % (
-            self.__class__.__name__,
-            len(self),
-            self.name
-        )
+        return '{0}({1!r} entries, {2!r})'.format(
+            self.__class__.__name__, len(self), self.name)
 
 
 class TAG_Compound(BaseTag, dict):
@@ -238,24 +232,17 @@ class TAG_Compound(BaseTag, dict):
 
     def pretty(self, indent=0, indent_str='  '):
         t = []
-        t.append('%sTAG_Compound(%r): %d entries' % (
-            indent_str * indent,
-            self.name,
-            len(self.value)
-        ))
-        t.append('%s{' % (indent_str * indent))
+        t.append('{0}TAG_Compound({1!r}): {2} entries'.format(
+            indent_str * indent, self.name, len(self.value)))
+        t.append('{0}{{'.format(indent_str * indent))
         for v in self.itervalues():
             t.append(v.pretty(indent + 1))
-        t.append('%s}' % (indent_str * indent))
-
+        t.append('{0}}}'.format(indent_str * indent))
         return '\n'.join(t)
 
     def __repr__(self):
-        return '%s(%r entries, %r)' % (
-            self.__class__.__name__,
-            len(self),
-            self.name
-        )
+        return '{0}({1!r} entries, {2!r})'.format(
+            self.__class__.__name__, len(self), self.name)
 
     def __setitem__(self, key, value):
         """
@@ -277,11 +264,8 @@ class TAG_Compound(BaseTag, dict):
 
 class TAG_Int_Array(BaseTag):
     def pretty(self, indent=0, indent_str='  '):
-        return '%sTAG_Int_Array(%r): [%d integers]' % (
-            indent_str * indent,
-            self.name,
-            len(self.value)
-        )
+        return '{0}TAG_Int_Array({1!r}): [{2} integers]'.format(
+            indent_str * indent, self.name, len(self.value))
 
 # The TAG_* types have the convienient property of being continuous.
 # The code is written in such a way that if this were to no longer be
