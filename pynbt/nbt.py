@@ -20,14 +20,14 @@ class BaseTag(object):
         """Reads a length-prefixed UTF-8 string."""
         name_length = read('H', 2)[0]
         return read(
-            '{}s'.format(name_length),
+            '{0}s'.format(name_length),
             name_length
         )[0].decode('utf-8')
 
     @staticmethod
     def _write_utf8(write, value):
         """Writes a length-prefixed UTF-8 string."""
-        write('h{}s'.format(len(value)), len(value), value.encode('UTF-8'))
+        write('h{0}s'.format(len(value)), len(value), value.encode('UTF-8'))
 
     @classmethod
     def read(cls, read, has_name=True):
@@ -71,11 +71,11 @@ class BaseTag(object):
         elif cls is TAG_Byte_Array:
             # A simple array of (signed) bytes.
             length = read('i', 4)[0]
-            return cls(read('{}b'.format(length), length), name=name)
+            return cls(read('{0}b'.format(length), length), name=name)
         elif cls is TAG_Int_Array:
             # A simple array of (signed) 4-byte integers.
             length = read('i', 4)[0]
-            return cls(read('{}i'.format(length), length * 4), name=name)
+            return cls(read('{0}i'.format(length), length * 4), name=name)
         elif cls is TAG_Byte:
             # A single (signed) byte.
             return cls(read('b', 1)[0], name=name)
@@ -121,10 +121,10 @@ class BaseTag(object):
             self._write_utf8(write, self.value)
         elif isinstance(self, TAG_Int_Array):
             l = len(self.value)
-            write('i{}i'.format(l), l, *self.value)
+            write('i{0}i'.format(l), l, *self.value)
         elif isinstance(self, TAG_Byte_Array):
             l = len(self.value)
-            write('i{}b'.format(l), l, *self.value)
+            write('i{0}b'.format(l), l, *self.value)
         elif isinstance(self, TAG_Byte):
             write('b', self.value)
         elif isinstance(self, TAG_Short):
