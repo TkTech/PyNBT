@@ -5,3 +5,4 @@ build/*
 ENV/
 __test__.nbt
 *.egg-info
+.ropeproject
