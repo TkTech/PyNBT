@@ -27,7 +27,7 @@ class BaseTag(object):
     @staticmethod
     def _write_utf8(write, value):
         """Writes a length-prefixed UTF-8 string."""
-        write('h{}s'.format(len(value)), len(value), value)
+        write('h{}s'.format(len(value)), len(value), value.encode('UTF-8'))
 
     @classmethod
     def read(cls, read, has_name=True):
@@ -234,7 +234,7 @@ class TAG_Compound(BaseTag, dict):
         t.append('{0}TAG_Compound({1!r}): {2} entries'.format(
             indent_str * indent, self.name, len(self.value)))
         t.append('{0}{{'.format(indent_str * indent))
-        for v in self.itervalues():
+        for v in self.values():
             t.append(v.pretty(indent + 1))
         t.append('{0}}}'.format(indent_str * indent))
         return '\n'.join(t)
