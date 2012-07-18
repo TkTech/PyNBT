@@ -234,7 +234,7 @@ class TAG_Compound(BaseTag, dict):
         t.append('{0}TAG_Compound({1!r}): {2} entries'.format(
             indent_str * indent, self.name, len(self.value)))
         t.append('{0}{{'.format(indent_str * indent))
-        for v in self.itervalues():
+        for v in self.values():
             t.append(v.pretty(indent + 1))
         t.append('{0}}}'.format(indent_str * indent))
         return '\n'.join(t)
