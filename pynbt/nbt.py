@@ -19,15 +19,13 @@ class BaseTag(object):
     def _read_utf8(read):
         """Reads a length-prefixed UTF-8 string."""
         name_length = read('H', 2)[0]
-        return read(
-            '{0}s'.format(name_length),
-            name_length
-        )[0].decode('utf-8')
+        return read.io.read(name_length).decode('utf-8')
 
     @staticmethod
     def _write_utf8(write, value):
         """Writes a length-prefixed UTF-8 string."""
-        write('h{0}s'.format(len(value)), len(value), value.encode('UTF-8'))
+        write('h', len(value))
+        write.io.write(value.encode('UTF-8'))
 
     @classmethod
     def read(cls, read, has_name=True):
@@ -328,6 +326,7 @@ class NBTFile(TAG_Compound):
             read = lambda fmt, size: unpack('<' + fmt, final_io.read(size))
         else:
             read = lambda fmt, size: unpack('>' + fmt, final_io.read(size))
+        read.io = final_io
 
         # All valid NBT files will begin with 0x0A, which is a TAG_Compound.
         if read('b', 1)[0] != 0x0A:
@@ -350,4 +349,6 @@ class NBTFile(TAG_Compound):
             write = lambda fmt, *args: final_io.write(pack('<' + fmt, *args))
         else:
             write = lambda fmt, *args: final_io.write(pack('>' + fmt, *args))
+        write.io = final_io
+
         self.write(write)
