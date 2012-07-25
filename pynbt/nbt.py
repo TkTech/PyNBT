@@ -211,7 +211,7 @@ class TAG_List(BaseTag, list):
             indent_str * indent, self.name, len(self.value)))
         t.append('{0}{{'.format(indent_str * indent))
         for v in self.value:
-            t.append(v.pretty(indent + 1))
+            t.append(v.pretty(indent + 1, indent_str))
         t.append('{0}}}'.format(indent_str * indent))
         return '\n'.join(t)
 
@@ -233,7 +233,7 @@ class TAG_Compound(BaseTag, dict):
             indent_str * indent, self.name, len(self.value)))
         t.append('{0}{{'.format(indent_str * indent))
         for v in self.values():
-            t.append(v.pretty(indent + 1))
+            t.append(v.pretty(indent + 1, indent_str))
         t.append('{0}}}'.format(indent_str * indent))
         return '\n'.join(t)
 
