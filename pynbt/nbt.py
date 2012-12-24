@@ -160,27 +160,27 @@ class BaseTag(object):
 
 
 class TAG_Byte(BaseTag):
-    pass
+    __slots__ = ('name', 'value')
 
 
 class TAG_Short(BaseTag):
-    pass
+    __slots__ = ('name', 'value')
 
 
 class TAG_Int(BaseTag):
-    pass
+    __slots__ = ('name', 'value')
 
 
 class TAG_Long(BaseTag):
-    pass
+    __slots__ = ('name', 'value')
 
 
 class TAG_Float(BaseTag):
-    pass
+    __slots__ = ('name', 'value')
 
 
 class TAG_Double(BaseTag):
-    pass
+    __slots__ = ('name', 'value')
 
 
 class TAG_Byte_Array(BaseTag):
@@ -190,7 +190,7 @@ class TAG_Byte_Array(BaseTag):
 
 
 class TAG_String(BaseTag):
-    pass
+    __slots__ = ('name', 'value')
 
 
 class TAG_List(BaseTag, list):
@@ -268,18 +268,18 @@ class TAG_Int_Array(BaseTag):
 # The code is written in such a way that if this were to no longer be
 # true in the future, _tags can simply be replaced with a dict().
 _tags = (
-    None,
-    TAG_Byte,
-    TAG_Short,
-    TAG_Int,
-    TAG_Long,
-    TAG_Float,
-    TAG_Double,
-    TAG_Byte_Array,
-    TAG_String,
-    TAG_List,
-    TAG_Compound,
-    TAG_Int_Array
+    None,            # 0x00, or TAG_End
+    TAG_Byte,        # 0x01
+    TAG_Short,       # 0x02
+    TAG_Int,         # 0x03
+    TAG_Long,        # 0x04
+    TAG_Float,       # 0x05
+    TAG_Double,      # 0x06
+    TAG_Byte_Array,  # 0x07
+    TAG_String,      # 0x08
+    TAG_List,        # 0x09
+    TAG_Compound,    # 0x0A
+    TAG_Int_Array    # 0x0B
 )
 
 
