@@ -35,7 +35,7 @@ class CreationTest(unittest.TestCase):
             }
         ])
         with open('__test__.nbt', 'wb') as io:
-            self.nbt.save(io, compression=NBTFile.Compression.GZIP)
+            self.nbt.save(io)
 
 if __name__ == '__main__':
     unittest.main()

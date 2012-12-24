@@ -1,5 +1,6 @@
 #!/usr/env/bin python
 # -*- coding: utf8 -*-
+import gzip
 import array
 import unittest
 try:
@@ -62,13 +63,14 @@ BIG_TEST = array.array('B', [
 
 class BigTest(unittest.TestCase):
     def setUp(self):
-        self.io = StringIO(BIG_TEST)
+        raw_io = StringIO(BIG_TEST)
+        self.io = gzip.GzipFile(fileobj=raw_io)
 
     def test_parse(self):
         """
         Test to ensure PyNBT can parse the defacto-test file, "bigtest.nbt".
         """
-        nbt = NBTFile(self.io, compression=NBTFile.Compression.GZIP)
+        nbt = NBTFile(self.io)
         # Ensure every base tag was parsed.
         self.assertTrue(len(nbt) == 11)
 

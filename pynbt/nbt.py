@@ -11,7 +11,6 @@ __all__ = (
     'TAG_Double', 'TAG_Byte_Array', 'TAG_String', 'TAG_List', 'TAG_Compound',
     'TAG_Int_Array'
 )
-import gzip
 from struct import unpack, pack
 
 
@@ -289,18 +288,7 @@ _tags = (
 
 
 class NBTFile(TAG_Compound):
-    class Compression(object):
-        """
-        Defines compression schemes to be used for loading and saving
-        NBT files.
-        """
-        # NONE is simply for the sake of completeness.
-        NONE = 10
-        # Use Gzip compression when reading or writing.
-        GZIP = 20
-
-    def __init__(self, io=None, name=None, value=None, compression=None,
-        little_endian=False):
+    def __init__(self, io=None, name=None, value=None, little_endian=False):
         """
         Creates a new NBTFile or loads one from any file-like object providing
         `read()`.
@@ -310,28 +298,21 @@ class NBTFile(TAG_Compound):
 
         Whereas loading an existing one is most often done:
         >>> with open('my_file.nbt', rb') as io:
-        ...     nbt = NBTFile(io=io, compression=NBTFile.Compression.GZIP)
+        ...     nbt = NBTFile(io=io)
         """
         # No file or path given, so we're creating a new NBTFile.
         if io is None:
             super(NBTFile, self).__init__(value if value else {}, name)
             return
 
-        if compression is None or compression == NBTFile.Compression.NONE:
-            final_io = io
-        elif compression == NBTFile.Compression.GZIP:
-            final_io = gzip.GzipFile(fileobj=io, mode='rb')
-        else:
-            raise ValueError('Unrecognized compression scheme.')
-
         # The pocket edition uses little-endian NBT files, but annoyingly
         # without any kind of header we can't determine that ourselves,
         # not even a magic number we could flip.
         if little_endian:
-            read = lambda fmt, size: unpack('<' + fmt, final_io.read(size))
+            read = lambda fmt, size: unpack('<' + fmt, io.read(size))
         else:
-            read = lambda fmt, size: unpack('>' + fmt, final_io.read(size))
-        read.io = final_io
+            read = lambda fmt, size: unpack('>' + fmt, io.read(size))
+        read.io = io
 
         # All valid NBT files will begin with 0x0A, which is a TAG_Compound.
         if read('b', 1)[0] != 0x0A:
@@ -340,20 +321,15 @@ class NBTFile(TAG_Compound):
         tmp = TAG_Compound.read(read)
         super(NBTFile, self).__init__(tmp, tmp.name)
 
-    def save(self, io, compression=None, little_endian=False):
+    def save(self, io, little_endian=False):
         """
         Saves the `NBTFile()` to `io`, which can be any file-like object
         providing `write()`.
         """
-        if compression is None or compression == NBTFile.Compression.NONE:
-            final_io = io
-        elif compression == NBTFile.Compression.GZIP:
-            final_io = gzip.GzipFile(fileobj=io, mode='wb')
-
         if little_endian:
-            write = lambda fmt, *args: final_io.write(pack('<' + fmt, *args))
+            write = lambda fmt, *args: io.write(pack('<' + fmt, *args))
         else:
-            write = lambda fmt, *args: final_io.write(pack('>' + fmt, *args))
-        write.io = final_io
+            write = lambda fmt, *args: io.write(pack('>' + fmt, *args))
+        write.io = io
 
         self.write(write)

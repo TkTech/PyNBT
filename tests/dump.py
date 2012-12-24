@@ -6,7 +6,7 @@ from pynbt import NBTFile
 
 def main(argv):
     with open(sys.argv[1], 'rb') as fin:
-        n = NBTFile(fin, compression=NBTFile.Compression.GZIP)
+        n = NBTFile(fin)
         print(n.pretty())
 
 if __name__ == '__main__':

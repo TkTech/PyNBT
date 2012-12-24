@@ -1,7 +1,7 @@
 # PyNBT
 
 PyNBT is a tiny, liberally licenced (MIT) NBT library.
-It supports reading and writing compressed, uncompressed, big endian or little endian NBT files.
+It supports reading and writing big endian or little endian NBT files.
 
 ## Using the Library
 Using the library in your own programs is simple and is capable of reading, modifying, and saving NBT files.
@@ -25,7 +25,7 @@ value = {
 
 nbt = NBTFile(value=value)
 with open('out.nbt', 'wb') as io:
-  nbt.save(io, compression=NBTFile.Compression.GZIP)
+  nbt.save(io)
 ```
 
 ### Reading
@@ -37,7 +37,7 @@ Simply pretty-printing the file created from the example under writing:
 from pynbt import NBTFile
 
 with open('out.nbt') as io:
-  nbt = NBTFile(io, compression=NBTFile.Compression.GZIP)
+  nbt = NBTFile(io)
   print(nbt.pretty())
 ```
 
