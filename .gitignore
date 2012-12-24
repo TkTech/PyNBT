@@ -6,3 +6,4 @@ ENV/
 __test__.nbt
 *.egg-info
 .ropeproject
+.DS_Store
