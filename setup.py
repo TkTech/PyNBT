@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name='PyNBT',
-    version='1.3.2',
+    version='1.3.3',
     description='Tiny, liberally-licensed NBT library (Minecraft).',
     author='Tyler Kennedy',
     author_email='tk@tkte.ch',
