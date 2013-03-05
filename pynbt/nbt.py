@@ -288,7 +288,7 @@ _tags = (
 
 
 class NBTFile(TAG_Compound):
-    def __init__(self, io=None, name=None, value=None, little_endian=False):
+    def __init__(self, io=None, name='', value=None, little_endian=False):
         """
         Creates a new NBTFile or loads one from any file-like object providing
         `read()`.
