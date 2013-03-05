@@ -36,7 +36,7 @@ Simply pretty-printing the file created from the example under writing:
 ```python
 from pynbt import NBTFile
 
-with open('out.nbt') as io:
+with open('out.nbt', 'rb') as io:
   nbt = NBTFile(io)
   print(nbt.pretty())
 ```
@@ -60,15 +60,15 @@ Every tag exposes a minimum of two fields, `.name` and `.value`. Every tag's val
 also provides complete `__repr__` methods for printing. This makes traversal very simple and familiar to existing Python developers.
 
 ```python
-with open('out.nbt') as io:
+with open('out.nbt', 'rb') as io:
   nbt = NBTFile(io)
   # Iterate over every TAG in the root compound as you would any other dict
   for name, tag in nbt.items():
-      print name, tag
+      print(name, tag)
 
   # Print every tag in a list
   for tag in nbt['list_test']:
-      print tag
+      print(tag)
 ```
 
 ## Changelog
