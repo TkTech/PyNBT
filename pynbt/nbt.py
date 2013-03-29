@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 """
 Implements reading & writing for the Minecraft Named Binary Tag (NBT) format,
 created by Markus Petersson.
@@ -22,7 +22,7 @@ class BaseTag(object):
     @staticmethod
     def _read_utf8(read):
         """Reads a length-prefixed UTF-8 string."""
-        name_length = read('H', 2)[0]
+        name_length = read('h', 2)[0]
         return read.io.read(name_length).decode('utf-8')
 
     @staticmethod
