@@ -108,7 +108,7 @@ the commit history between tags for full changes.
 ### v1.1.0
 
 - Breaks compatibility with older code, but allows much more
-  convienient creation of `TAG_Compound`. `name` and `value` have in most cases
+  convenient creation of `TAG_Compound`. `name` and `value` have in most cases
   swapped spots.
 - `name` is now the last argument of every `TAG_*`, and
   optional for children of a `TAG_Compound`. Instead, they'll be given the key
