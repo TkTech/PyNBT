@@ -297,7 +297,7 @@ class NBTFile(TAG_Compound):
         >>> nbt = NBTFile(name='')
 
         Whereas loading an existing one is most often done:
-        >>> with open('my_file.nbt', rb') as io:
+        >>> with open('my_file.nbt', 'rb') as io:
         ...     nbt = NBTFile(io=io)
         """
         # No file or path given, so we're creating a new NBTFile.
