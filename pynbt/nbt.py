@@ -96,6 +96,9 @@ class BaseTag(object):
         elif cls is TAG_Double:
             # A single double-precision floating point value.
             return cls(read('d', 8)[0], name=name)
+        elif cls is TAG_End:
+            # A End of Compound Tag
+            return cls(read('2b', 2)[0], name=name)
 
     def write(self, write):
         # Only write the name TAG_String if our name is not `None`.
@@ -196,6 +199,9 @@ class TAG_Byte_Array(BaseTag):
 class TAG_String(BaseTag):
     __slots__ = ('name', 'value')
 
+class TAG_End(BaseTag):
+    __slots__ = ('name', 'value')
+
 
 class TAG_List(BaseTag, list):
     def __init__(self, tag_type, value=None, name=None):
@@ -272,7 +278,7 @@ class TAG_Int_Array(BaseTag):
 # The code is written in such a way that if this were to no longer be
 # true in the future, _tags can simply be replaced with a dict().
 _tags = (
-    None,            # 0x00, or TAG_End
+    TAG_End,         # 0x00
     TAG_Byte,        # 0x01
     TAG_Short,       # 0x02
     TAG_Int,         # 0x03
