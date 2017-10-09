@@ -199,6 +199,7 @@ class TAG_Byte_Array(BaseTag):
 class TAG_String(BaseTag):
     __slots__ = ('name', 'value')
 
+
 class TAG_End(BaseTag):
     __slots__ = ('name', 'value')
 
