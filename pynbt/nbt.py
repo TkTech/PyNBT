@@ -9,7 +9,7 @@ created by Markus Petersson.
 __all__ = (
     'NBTFile', 'TAG_Byte', 'TAG_Short', 'TAG_Int', 'TAG_Long', 'TAG_Float',
     'TAG_Double', 'TAG_Byte_Array', 'TAG_String', 'TAG_List', 'TAG_Compound',
-    'TAG_Int_Array'
+    'TAG_Int_Array', 'TAG_Long_Array'
 )
 from struct import unpack, pack
 
@@ -78,6 +78,10 @@ class BaseTag(object):
             # A simple array of (signed) 4-byte integers.
             length = read('i', 4)[0]
             return cls(read('{0}i'.format(length), length * 4), name=name)
+        elif cls is TAG_Long_Array:
+            # A simple array of (signed) 8-byte longs.
+            length = read('i', 4)[0]
+            return cls(read('{0}q'.format(length), length * 4), name=name)
         elif cls is TAG_Byte:
             # A single (signed) byte.
             return cls(read('b', 1)[0], name=name)
@@ -127,6 +131,9 @@ class BaseTag(object):
         elif isinstance(self, TAG_Int_Array):
             l = len(self.value)
             write('i{0}i'.format(l), l, *self.value)
+        elif isinstance(self, TAG_Long_Array):
+            l = len(self.value)
+            write('i{0}q'.format(l), l, *self.value)
         elif isinstance(self, TAG_Byte_Array):
             l = len(self.value)
             write('i{0}b'.format(l), l, *self.value)
@@ -275,6 +282,12 @@ class TAG_Int_Array(BaseTag):
         return '{0}TAG_Int_Array({1!r}): [{2} integers]'.format(
             indent_str * indent, self.name, len(self.value))
 
+
+class TAG_Long_Array(BaseTag):
+    def pretty(self, indent=0, indent_str='  '):
+        return '{0}TAG_Long_Array({1!r}): [{2} longs]'.format(
+            indent_str * indent, self.name, len(self.value))
+
 # The TAG_* types have the convienient property of being continuous.
 # The code is written in such a way that if this were to no longer be
 # true in the future, _tags can simply be replaced with a dict().
@@ -290,7 +303,8 @@ _tags = (
     TAG_String,      # 0x08
     TAG_List,        # 0x09
     TAG_Compound,    # 0x0A
-    TAG_Int_Array    # 0x0B
+    TAG_Int_Array,   # 0x0B
+    TAG_Long_Array   # 0x0C
 )
 
 

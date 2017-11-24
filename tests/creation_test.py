@@ -18,6 +18,7 @@ class CreationTest(unittest.TestCase):
         n['string'] = TAG_String('Testing')
         n['int_array'] = TAG_Int_Array([45, 5, 6])
         n['byte_array'] = TAG_Byte_Array([4, 3, 2])
+        n['long_array'] = TAG_Long_Array([5, 6, 7])
         n['list'] = TAG_List(TAG_Int, [
             TAG_Int(4)
         ])

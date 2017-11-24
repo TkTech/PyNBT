@@ -11,5 +11,6 @@ from pynbt.nbt import (
     TAG_String,
     TAG_List,
     TAG_Compound,
-    TAG_Int_Array
+    TAG_Int_Array,
+    TAG_Long_Array
 )
