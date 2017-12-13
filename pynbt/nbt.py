@@ -81,7 +81,7 @@ class BaseTag(object):
         elif cls is TAG_Long_Array:
             # A simple array of (signed) 8-byte longs.
             length = read('i', 4)[0]
-            return cls(read('{0}q'.format(length), length * 4), name=name)
+            return cls(read('{0}q'.format(length), length * 8), name=name)
         elif cls is TAG_Byte:
             # A single (signed) byte.
             return cls(read('b', 1)[0], name=name)
