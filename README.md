@@ -79,8 +79,12 @@ with open('out.nbt', 'rb') as io:
 These changelogs are summaries only and not comprehensive. See
 the commit history between tags for full changes.
 
+### v2.0.0
+- Py2 is no longer supported.
+
 ### v1.4.0
-- **Removed** pocket detection helpers and ``RegionFile``, leaving PyNBT to **only** handle NBT.
+- **Removed** pocket detection helpers and ``RegionFile``, leaving PyNBT to
+  **only** handle NBT.
 - Added a simple unicode test.
 
 ### v1.3.0
