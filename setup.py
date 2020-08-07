@@ -7,7 +7,7 @@ with open(os.path.join(root, 'README.md'), 'rb') as readme:
 
 setup(
     name='PyNBT',
-    version='1.3.3',
+    version='2.0.0',
     description='Tiny, liberally-licensed NBT library (Minecraft).',
     long_description=long_description,
     long_description_content_type='text/markdown',
