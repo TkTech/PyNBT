@@ -1,16 +1,23 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
-Implements reading & writing for the Minecraft Named Binary Tag (NBT) format,
-created by Markus Petersson.
-
-.. moduleauthor:: Tyler Kennedy <tk@tkte.ch>
+Implements reading & writing for the Named Binary Tag (NBT) format used
+in Minecraft.
 """
 __all__ = (
-    'NBTFile', 'TAG_Byte', 'TAG_Short', 'TAG_Int', 'TAG_Long', 'TAG_Float',
-    'TAG_Double', 'TAG_Byte_Array', 'TAG_String', 'TAG_List', 'TAG_Compound',
-    'TAG_Int_Array', 'TAG_Long_Array'
+    'NBTFile',
+    'TAG_Byte',
+    'TAG_Short',
+    'TAG_Int',
+    'TAG_Long',
+    'TAG_Float',
+    'TAG_Double',
+    'TAG_Byte_Array',
+    'TAG_String',
+    'TAG_List',
+    'TAG_Compound',
+    'TAG_Int_Array',
+    'TAG_Long_Array'
 )
+from functools import partial
 from struct import unpack, pack
 
 
@@ -23,13 +30,13 @@ class BaseTag(object):
     def _read_utf8(read):
         """Reads a length-prefixed UTF-8 string."""
         name_length = read('h', 2)[0]
-        return read.io.read(name_length).decode('utf-8')
+        return read.src.read(name_length).decode('utf-8')
 
     @staticmethod
     def _write_utf8(write, value):
         """Writes a length-prefixed UTF-8 string."""
         write('h', len(value))
-        write.io.write(value.encode('utf-8'))
+        write.dst.write(value.encode('utf-8'))
 
     @classmethod
     def read(cls, read, has_name=True):
@@ -129,14 +136,14 @@ class BaseTag(object):
         elif isinstance(self, TAG_String):
             self._write_utf8(write, self.value)
         elif isinstance(self, TAG_Int_Array):
-            l = len(self.value)
-            write('i{0}i'.format(l), l, *self.value)
+            length = len(self.value)
+            write('i{0}i'.format(length), length, *self.value)
         elif isinstance(self, TAG_Long_Array):
-            l = len(self.value)
-            write('i{0}q'.format(l), l, *self.value)
+            length = len(self.value)
+            write('i{0}q'.format(length), length, *self.value)
         elif isinstance(self, TAG_Byte_Array):
-            l = len(self.value)
-            write('i{0}b'.format(l), l, *self.value)
+            length = len(self.value)
+            write('i{0}b'.format(length), length, *self.value)
         elif isinstance(self, TAG_Byte):
             write('b', self.value)
         elif isinstance(self, TAG_Short):
@@ -168,9 +175,6 @@ class BaseTag(object):
 
     def __str__(self):
         return repr(self)
-
-    def __unicode__(self):
-        return unicode(repr(self), 'utf-8')
 
 
 class TAG_Byte(BaseTag):
@@ -288,6 +292,7 @@ class TAG_Long_Array(BaseTag):
         return '{0}TAG_Long_Array({1!r}): [{2} longs]'.format(
             indent_str * indent, self.name, len(self.value))
 
+
 # The TAG_* types have the convienient property of being continuous.
 # The code is written in such a way that if this were to no longer be
 # true in the future, _tags can simply be replaced with a dict().
@@ -308,6 +313,22 @@ _tags = (
 )
 
 
+def _read_little(src, fmt, size):
+    return unpack('<' + fmt, src.read(size))
+
+
+def _read_big(src, fmt, size):
+    return unpack('>' + fmt, src.read(size))
+
+
+def _write_little(dst, fmt, *args):
+    dst.write(pack('<' + fmt, *args))
+
+
+def _write_big(dst, fmt, *args):
+    dst.write(pack('>' + fmt, *args))
+
+
 class NBTFile(TAG_Compound):
     def __init__(self, io=None, name='', value=None, little_endian=False):
         """
@@ -320,20 +341,24 @@ class NBTFile(TAG_Compound):
         Whereas loading an existing one is most often done:
         >>> with open('my_file.nbt', 'rb') as io:
         ...     nbt = NBTFile(io=io)
+
+        :param io: A file-like object to read an existing NBT file from.
+        :param name: Name of the root tag (usually blank) [default: '']
+        :param value: Value of the root rag. [default: `{}`]
+        :param little_endian: `True` if the file is in little-endian byte
+                              order. [default: `False`]
         """
         # No file or path given, so we're creating a new NBTFile.
         if io is None:
-            super(NBTFile, self).__init__(value if value else {}, name)
+            super().__init__(value if value else {}, name)
             return
 
         # The pocket edition uses little-endian NBT files, but annoyingly
         # without any kind of header we can't determine that ourselves,
         # not even a magic number we could flip.
-        if little_endian:
-            read = lambda fmt, size: unpack('<' + fmt, io.read(size))
-        else:
-            read = lambda fmt, size: unpack('>' + fmt, io.read(size))
-        read.io = io
+        read = _read_little if little_endian else _read_big
+        read = partial(read, io)
+        read.src = io
 
         # All valid NBT files will begin with 0x0A, which is a TAG_Compound.
         if read('b', 1)[0] != 0x0A:
@@ -346,11 +371,13 @@ class NBTFile(TAG_Compound):
         """
         Saves the `NBTFile()` to `io`, which can be any file-like object
         providing `write()`.
+
+        :param io: A file-like object to write the resulting NBT file to.
+        :param little_endian: `True` if little-endian byte order should be
+                              used. [default: `False`]
         """
-        if little_endian:
-            write = lambda fmt, *args: io.write(pack('<' + fmt, *args))
-        else:
-            write = lambda fmt, *args: io.write(pack('>' + fmt, *args))
-        write.io = io
+        write = _write_little if little_endian else _write_big
+        write = partial(write, io)
+        write.dst = io
 
         self.write(write)

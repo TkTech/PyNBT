@@ -1,15 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf8 -*-
 import gzip
 import array
-import unittest
-try:
-    from io import BytesIO as StringIO
-except ImportError:
-    try:
-        from cStringIO import StringIO
-    except ImportError:
-        from StringIO import StringIO
+from io import BytesIO
 
 from pynbt import NBTFile
 
@@ -58,25 +49,18 @@ BIG_TEST = array.array('B', [
   0x23, 0x08, 0x42, 0xcb, 0xe9, 0x1b, 0xd6, 0x78, 0xc2, 0xec, 0xfe, 0xfc,
   0x7a, 0xfb, 0x7d, 0x78, 0xd3, 0x84, 0xdf, 0xd4, 0xf2, 0xa4, 0xfb, 0x08,
   0x06, 0x00, 0x00
-]).tostring()
+]).tobytes()
 
 
-class BigTest(unittest.TestCase):
-    def setUp(self):
-        raw_io = StringIO(BIG_TEST)
-        self.io = gzip.GzipFile(fileobj=raw_io)
-
-    def test_parse(self):
-        """
-        Test to ensure PyNBT can parse the defacto-test file, "bigtest.nbt".
-        """
-        nbt = NBTFile(self.io)
+def test_parse():
+    """
+    Test to ensure PyNBT can parse the defacto-test file, "bigtest.nbt".
+    """
+    with gzip.GzipFile(fileobj=BytesIO(BIG_TEST)) as io:
+        nbt = NBTFile(io)
         # Ensure every base tag was parsed.
-        self.assertTrue(len(nbt) == 11)
+        assert len(nbt) == 11
 
         # Test 3 tag types, and deep compounds.
         tag = nbt['listTest (compound)'].value[0]['created-on']
-        self.assertTrue(tag.value == 1264099775885)
-
-if __name__ == '__main__':
-    unittest.main()
+        assert tag.value == 1264099775885

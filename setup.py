@@ -1,22 +1,26 @@
-#!/usr/bin/env python
-# -*- coding: utf8 -*-
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+import os.path
+from setuptools import setup
+
+root = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(root, 'README.md'), 'rb') as readme:
+    long_description = readme.read().decode('utf-8')
 
 setup(
     name='PyNBT',
     version='1.3.3',
     description='Tiny, liberally-licensed NBT library (Minecraft).',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Tyler Kennedy',
     author_email='tk@tkte.ch',
     url='https://github.com/TkTech/PyNBT',
-    packages=[
-        'pynbt'
-    ],
+    keywords=['minecraft', 'nbt'],
+    py_modules=['pynbt'],
+    extras_require={
+        'test': ['pytest']
+    },
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
         'License :: OSI Approved :: MIT License'
