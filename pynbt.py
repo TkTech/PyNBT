@@ -80,7 +80,7 @@ class BaseTag(object):
         elif cls is TAG_Byte_Array:
             # A simple array of (signed) bytes.
             length = read('i', 4)[0]
-            return cls(read('{0}b'.format(length), length), name=name)
+            return cls(bytearray(read.src.read(length)), name=name)
         elif cls is TAG_Int_Array:
             # A simple array of (signed) 4-byte integers.
             length = read('i', 4)[0]
@@ -142,8 +142,8 @@ class BaseTag(object):
             length = len(self.value)
             write('i{0}q'.format(length), length, *self.value)
         elif isinstance(self, TAG_Byte_Array):
-            length = len(self.value)
-            write('i{0}b'.format(length), length, *self.value)
+            write('i', len(self.value))
+            write.dst.write(bytes(self.value))
         elif isinstance(self, TAG_Byte):
             write('b', self.value)
         elif isinstance(self, TAG_Short):

@@ -79,6 +79,10 @@ with open('out.nbt', 'rb') as io:
 These changelogs are summaries only and not comprehensive. See
 the commit history between tags for full changes.
 
+### v3.0.0
+- TAG_Byte_Array now returns and accepts `bytearray()`, rather than a list
+  of bytes (#18).
+
 ### v2.0.0
 - Py2 is no longer supported.
 

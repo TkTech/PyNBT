@@ -2,7 +2,7 @@ import gzip
 import array
 from io import BytesIO
 
-from pynbt import NBTFile
+from pynbt import NBTFile, TAG_Byte_Array
 
 # bigtest.nbt
 BIG_TEST = array.array('B', [
@@ -64,3 +64,10 @@ def test_parse():
         # Test 3 tag types, and deep compounds.
         tag = nbt['listTest (compound)'].value[0]['created-on']
         assert tag.value == 1264099775885
+
+        tag = nbt[
+            'byteArrayTest (the first 1000 values of (n*n*255+n*7)%100,'
+            ' starting with n=0 (0, 62, 34, 16, 8, ...))'
+        ]
+        for i in range(0, 1000):
+            assert tag.value[i] == (i * i * 255 + i * 7) % 100
