@@ -35,8 +35,9 @@ class BaseTag(object):
     @staticmethod
     def _write_utf8(write, value):
         """Writes a length-prefixed UTF-8 string."""
-        write('h', len(value))
-        write.dst.write(value.encode('utf-8'))
+        b = value.encode('utf-8')
+        write('h', len(b))
+        write.dst.write(b)
 
     @classmethod
     def read(cls, read, has_name=True):
