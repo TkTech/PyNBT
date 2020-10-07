@@ -30,7 +30,7 @@ class BaseTag(object):
     def _read_utf8(read):
         """Reads a length-prefixed UTF-8 string."""
         name_length = read('h', 2)[0]
-        return read.src.read(name_length).decode('utf-8')
+        return read.src.read(name_length).decode('utf-8', 'surrogatepass')
 
     @staticmethod
     def _write_utf8(write, value):
