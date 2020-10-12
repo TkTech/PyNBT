@@ -16,6 +16,9 @@ setup(
     url='https://github.com/TkTech/PyNBT',
     keywords=['minecraft', 'nbt'],
     py_modules=['pynbt'],
+    install_requires=[
+        'mutf8>=1.0.2'
+    ],
     extras_require={
         'test': ['pytest']
     },

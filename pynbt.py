@@ -20,6 +20,8 @@ __all__ = (
 from functools import partial
 from struct import unpack, pack
 
+import mutf8
+
 
 class BaseTag(object):
     def __init__(self, value, name=None):
@@ -28,15 +30,16 @@ class BaseTag(object):
 
     @staticmethod
     def _read_utf8(read):
-        """Reads a length-prefixed UTF-8 string."""
+        """Reads a length-prefixed MUTF-8 string."""
         name_length = read('h', 2)[0]
-        return read.src.read(name_length).decode('utf-8')
+        return mutf8.decode_modified_utf8(read.src.read(name_length))
 
     @staticmethod
     def _write_utf8(write, value):
-        """Writes a length-prefixed UTF-8 string."""
-        write('h', len(value))
-        write.dst.write(value.encode('utf-8'))
+        """Writes a length-prefixed MUTF-8 string."""
+        encoded_value = mutf8.encode_modified_utf8(value)
+        write('h', len(encoded_value))
+        write.dst.write(encoded_value)
 
     @classmethod
     def read(cls, read, has_name=True):

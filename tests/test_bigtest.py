@@ -2,7 +2,7 @@ import gzip
 import array
 from io import BytesIO
 
-from pynbt import NBTFile, TAG_Byte_Array
+from pynbt import NBTFile
 
 # bigtest.nbt
 BIG_TEST = array.array('B', [
