@@ -384,3 +384,32 @@ class NBTFile(TAG_Compound):
         write.dst = io
 
         self.write(write)
+
+
+if __name__ == "__main__":
+    from argparse import ArgumentParser, FileType
+    import sys
+
+    parser = ArgumentParser(
+        description="Print content of a NBT file in a human-readable format"
+    )
+
+    parser.add_argument(
+        "-l",
+        "--little-endian",
+        help="use little endian instead of big endian byte order",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "file",
+        help="file to read from or standard input if omitted",
+        nargs="?",
+        type=FileType("rb"),
+        default=sys.stdin.buffer,
+    )
+
+    args = parser.parse_args()
+
+    nbt = NBTFile(io=args.file, little_endian=args.little_endian)
+    print(nbt.pretty())
