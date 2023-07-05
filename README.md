@@ -74,6 +74,29 @@ with open('out.nbt', 'rb') as io:
       print(tag)
 ```
 
+## Using the CLI
+
+```text
+usage: pynbt.py [-h] [-l] [file]
+
+Print content of a NBT file in a human-readable format
+
+positional arguments:
+  file                 file to read from or standard input if omitted
+
+options:
+  -h, --help           show this help message and exit
+  -l, --little-endian  use little endian instead of big endian byte order
+```
+
+```console
+python3 -m pynbt hotbar.nbt
+python3 -m pynbt -l house.mcstructure
+```
+
+_On Windows you might have to replace `python3` with `py` or `python` if
+you have installed Python through the Microsoft Store._
+
 ## Changelog
 
 These changelogs are summaries only and not comprehensive. See
