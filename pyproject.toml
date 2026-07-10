@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyNBT"
+dynamic = ["version"]
+description = "Tiny, liberally-licensed NBT library (Minecraft)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENCE"]
+authors = [{ name = "Tyler Kennedy", email = "tk@tkte.ch" }]
+keywords = ["minecraft", "nbt"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = ["mutf8>=1.1.0"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/TkTech/PyNBT"
+Source = "https://github.com/TkTech/PyNBT"
+Issues = "https://github.com/TkTech/PyNBT/issues"
+
+[tool.setuptools]
+py-modules = ["pynbt"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pynbt.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.bumpversion]
+current_version = "3.1.0"
+commit = true
+tag = true
+tag_name = "v{new_version}"
+allow_dirty = false
+
+[[tool.bumpversion.files]]
+filename = "pynbt.py"

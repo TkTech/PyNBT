@@ -2,6 +2,7 @@
 Implements reading & writing for the Named Binary Tag (NBT) format used
 in Minecraft.
 """
+__version__ = "3.1.0"
 __all__ = (
     'NBTFile',
     'TAG_Byte',
