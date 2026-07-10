@@ -79,6 +79,10 @@ with open('out.nbt', 'rb') as io:
 These changelogs are summaries only and not comprehensive. See
 the commit history between tags for full changes.
 
+### v3.2.0
+- Pin to mutf8 >= 1.1.0 for decoding/encoding fixes and performance improvements.
+- Modernized tooling, expanded tests up to py3.14.
+
 ### v3.0.0
 - TAG_Byte_Array now returns and accepts `bytearray()`, rather than a list
   of bytes (#18).
