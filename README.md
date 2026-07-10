@@ -1,10 +1,10 @@
-![Run tests](https://github.com/TkTech/PyNBT/workflows/Run%20tests/badge.svg?event=push)
+![CI](https://github.com/TkTech/PyNBT/actions/workflows/release.yml/badge.svg)
 
 # PyNBT
 
 PyNBT is a tiny, liberally licenced (MIT) NBT library.
 It supports reading and writing big endian or little endian NBT files.
-Tested and supported on Py3.5-Py3.9, pypy3.
+Tested and supported on CPython 3.9-3.14 and PyPy.
 
 ## Using the Library
 Using the library in your own programs is simple and is capable of reading, modifying, and saving NBT files.
